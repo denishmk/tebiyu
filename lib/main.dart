@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:tebiyu/core/theme/app_theme.dart';
-import 'package:tebiyu/features/splash/screens/splash_screen.dart';
+import 'package:tebiyu/features/onboarding/screens/onboarding_screen.dart';
 
 /// Temporary theme mode holder.
 ///
@@ -30,7 +30,7 @@ class TebiyuApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: mode,
-          home: const SplashScreen(),
+          home: const OnboardingScreen(),
         );
       },
     );

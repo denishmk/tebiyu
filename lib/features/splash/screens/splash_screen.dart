@@ -116,8 +116,8 @@ class _SplashScreenState extends State<SplashScreen>
           final height = constraints.maxHeight;
           final shortest = math.min(width, height);
 
-          final badgeSize = (shortest * 0.30).clamp(96.0, 168.0);
-          final logoWidth = badgeSize * 0.62;
+          final badgeSize = (shortest * 0.33).clamp(104.0, 180.0);
+          final logoWidth = badgeSize * 0.74;
           final scatterSize = (shortest * 0.055).clamp(16.0, 30.0);
 
           // Landscape and very short viewports lose the scattered layer. There
