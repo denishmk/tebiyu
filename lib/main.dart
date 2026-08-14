@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:tebiyu/core/theme/app_theme.dart';
-import 'package:tebiyu/core/theme/theme_preview_screen.dart';
 
-/// Temporary theme mode holder for the preview screen.
+import 'package:tebiyu/core/theme/app_theme.dart';
+import 'package:tebiyu/features/splash/screens/splash_screen.dart';
+
+/// Temporary theme mode holder.
 ///
 /// Replaced by a Riverpod provider in P5.2 when account settings land.
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(
@@ -29,7 +30,7 @@ class TebiyuApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: mode,
-          home: const ThemePreviewScreen(),
+          home: const SplashScreen(),
         );
       },
     );
