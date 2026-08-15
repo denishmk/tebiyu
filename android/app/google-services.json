@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "897512830722",
+    "project_id": "tebiyu-d9904",
+    "storage_bucket": "tebiyu-d9904.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:897512830722:android:600db65d5523e85631b41b",
+        "android_client_info": {
+          "package_name": "com.tebiyu.tebiyu"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "897512830722-sumltjnepjiskl1au8o2e967atfepl05.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3U3mD2IORWvKlfd1GnrY91fpIQu3Sw-8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "897512830722-sumltjnepjiskl1au8o2e967atfepl05.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "897512830722-f4170fon40rpusaftelar93kfdbnnqip.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.tebiyu.tebiyu"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

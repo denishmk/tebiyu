@@ -1,7 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'package:tebiyu/core/router/app_router.dart';
 import 'package:tebiyu/core/theme/app_theme.dart';
+import 'package:tebiyu/firebase_options.dart';
 
 /// Temporary theme mode holder.
 ///
@@ -10,7 +12,11 @@ final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(
   ThemeMode.light,
 );
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const TebiyuApp());
 }
 
