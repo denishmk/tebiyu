@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:tebiyu/core/router/app_router.dart';
 import 'package:tebiyu/core/theme/app_theme.dart';
-import 'package:tebiyu/features/onboarding/screens/onboarding_screen.dart';
 
 /// Temporary theme mode holder.
 ///
@@ -24,13 +24,13 @@ class TebiyuApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeModeNotifier,
       builder: (context, mode, _) {
-        return MaterialApp(
+        return MaterialApp.router(
           title: 'Tebiyu',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: mode,
-          home: const OnboardingScreen(),
+          routerConfig: AppRouter.instance,
         );
       },
     );

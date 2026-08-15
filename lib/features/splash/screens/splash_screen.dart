@@ -3,8 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:go_router/go_router.dart';
 import 'package:tebiyu/core/constants/app_assets.dart';
+import 'package:tebiyu/core/router/routes.dart';
 import 'package:tebiyu/core/theme/theme.dart';
 
 /// Tebiyu's splash screen.
@@ -93,14 +94,12 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     if (!mounted) return;
-
-    // P1.5 replaces this with a go_router call.
-    debugPrint('Splash resolved next route: $nextRoute');
+    context.go(nextRoute);
   }
 
   Future<String> _resolveNextRoute() async {
     final hasCompletedOnboarding = await _readOnboardingFlag();
-    return hasCompletedOnboarding ? '/home' : '/onboarding';
+    return hasCompletedOnboarding ? Routes.home : Routes.onboarding;
   }
 
   // P1.4 replaces this with a shared_preferences read.

@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
+import 'package:go_router/go_router.dart';
+import 'package:tebiyu/core/router/routes.dart';
 import 'package:tebiyu/core/services/preferences_service.dart';
 import 'package:tebiyu/core/theme/theme.dart';
 import 'package:tebiyu/core/widgets/constrained_page.dart';
@@ -53,9 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     if (!mounted) return;
     setState(() => _isFinishing = false);
-
-    // P1.5 replaces this with a go_router call to the home shell.
-    debugPrint('Onboarding complete. Language: $_language');
+    context.go(Routes.home);
   }
 
   @override
