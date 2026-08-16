@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tebiyu/features/auth/data/auth_repository.dart';
 
 /// The app wide [AuthRepository].
-final Provider<AuthRepository> authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => AuthRepository(),
-);
+final Provider<AuthRepository> authRepositoryProvider =
+    Provider<AuthRepository>(
+      (ref) => AuthRepository(),
+    );
 
 /// The current Firebase user, or null while browsing as a guest.
 ///

@@ -213,8 +213,7 @@ class AuthRepository {
       'invalid-verification-code' =>
         'That code is not correct. Check it and try again.',
       'session-expired' => 'The code expired. Request a new one.',
-      'quota-exceeded' =>
-        'Too many codes requested. Please try again later.',
+      'quota-exceeded' => 'Too many codes requested. Please try again later.',
       'account-exists-with-different-credential' =>
         'An account with this email already uses a different sign in method.',
       _ => 'Something went wrong. Please try again.',

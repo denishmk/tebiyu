@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tebiyu/core/router/app_router.dart';
 import 'package:tebiyu/core/theme/app_theme.dart';
@@ -17,16 +18,18 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const TebiyuApp());
+  runApp(const ProviderScope(child: TebiyuApp()));
 }
 
 /// The root widget for Tebiyu.
-class TebiyuApp extends StatelessWidget {
+class TebiyuApp extends ConsumerWidget {
   /// Creates the root widget.
   const TebiyuApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(goRouterProvider);
+
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeModeNotifier,
       builder: (context, mode, _) {
@@ -36,7 +39,7 @@ class TebiyuApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: mode,
-          routerConfig: AppRouter.instance,
+          routerConfig: router,
         );
       },
     );

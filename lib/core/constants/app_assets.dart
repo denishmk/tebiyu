@@ -5,4 +5,7 @@
 abstract final class AppAssets {
   /// The Tebiyu wordmark. White, used only on the splash screen.
   static const String logo = 'assets/images/logo/tebiyu_logo.png';
+
+  /// Google's brand mark, shown on the sign in button.
+  static const String googleIcon = 'assets/icons/google_icon.png';
 }

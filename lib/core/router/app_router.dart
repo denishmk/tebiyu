@@ -1,35 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:tebiyu/core/router/go_router_refresh_stream.dart';
 import 'package:tebiyu/core/router/routes.dart';
-import 'package:tebiyu/core/services/auth_state.dart';
+import 'package:tebiyu/features/auth/data/auth_providers.dart';
 import 'package:tebiyu/features/auth/screens/auth_screen.dart';
 import 'package:tebiyu/features/onboarding/screens/onboarding_screen.dart';
 import 'package:tebiyu/features/shell/screens/app_shell.dart';
 import 'package:tebiyu/features/shell/screens/placeholder_screen.dart';
 import 'package:tebiyu/features/splash/screens/splash_screen.dart';
 
+final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
+
 /// Tebiyu's router.
 ///
-/// The redirect handles authentication only. Whether onboarding has run is an
-/// asynchronous read, and a `go_router` redirect must be synchronous, so the
-/// splash resolves that question itself and navigates when it has an answer.
+/// Exposed as a provider so the redirect can consult Firebase auth state, but
+/// note what is watched and what is not. The repository is watched, since it
+/// never changes. The auth *state* is deliberately not watched here: doing so
+/// would rebuild the entire [GoRouter] on every sign in and discard the
+/// navigation stack. Instead the stream drives `refreshListenable`, which
+/// re-runs the redirect while leaving the router intact.
 ///
-/// Gated routes redirect to auth carrying the location the user was heading
-/// to, so signing in resumes the original intent rather than dropping them on
-/// the home feed. That detail is cheap here and expensive to retrofit, because
-/// otherwise every gated entry point has to remember its own return path.
-abstract final class AppRouter {
-  static final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>(
-    debugLabel: 'root',
-  );
+/// Whether onboarding has run is an asynchronous read and a redirect must be
+/// synchronous, so the splash resolves that question itself.
+final Provider<GoRouter> goRouterProvider = Provider<GoRouter>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
 
-  /// The configured router instance.
-  static final GoRouter instance = GoRouter(
+  return GoRouter(
     navigatorKey: _rootKey,
     initialLocation: Routes.splash,
-    refreshListenable: AuthState.instance,
-    redirect: _redirect,
+    refreshListenable: GoRouterRefreshStream(repository.authStateChanges),
+    redirect: (context, state) {
+      final location = state.matchedLocation;
+
+      if (!Routes.requiresAuth(location)) return null;
+      if (repository.isSignedIn) return null;
+
+      // Carry the intended destination so signing in resumes it. Dropping the
+      // user on the home feed after they authenticate loses their place and
+      // is the most common way this pattern is got wrong.
+      final from = Uri.encodeComponent(state.uri.toString());
+      return '${Routes.auth}?from=$from';
+    },
     routes: [
       GoRoute(
         path: Routes.splash,
@@ -124,20 +139,10 @@ abstract final class AppRouter {
       ),
     ],
   );
+});
 
-  static StatefulShellBranch _branch(String path, Widget child) {
-    return StatefulShellBranch(
-      routes: [GoRoute(path: path, builder: (context, state) => child)],
-    );
-  }
-
-  static String? _redirect(BuildContext context, GoRouterState state) {
-    final location = state.matchedLocation;
-
-    if (!Routes.requiresAuth(location)) return null;
-    if (AuthState.instance.isSignedIn) return null;
-
-    final from = Uri.encodeComponent(state.uri.toString());
-    return '${Routes.auth}?from=$from';
-  }
+StatefulShellBranch _branch(String path, Widget child) {
+  return StatefulShellBranch(
+    routes: [GoRoute(path: path, builder: (context, state) => child)],
+  );
 }
