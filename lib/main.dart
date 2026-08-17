@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tebiyu/core/router/app_router.dart';
+import 'package:tebiyu/core/services/preferences_service.dart';
 import 'package:tebiyu/core/theme/app_theme.dart';
+import 'package:tebiyu/features/location/data/location_providers.dart';
 import 'package:tebiyu/firebase_options.dart';
 
 /// Temporary theme mode holder.
@@ -18,7 +20,15 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const ProviderScope(child: TebiyuApp()));
+
+  final location = await PreferencesService.location();
+
+  runApp(
+    ProviderScope(
+      overrides: [initialLocationProvider.overrideWithValue(location)],
+      child: const TebiyuApp(),
+    ),
+  );
 }
 
 /// The root widget for Tebiyu.

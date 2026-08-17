@@ -84,4 +84,14 @@ abstract final class Routes {
       (route) => location == route || location.startsWith('$route/'),
     );
   }
+
+  /// City picker. Open to guests.
+  static const String location = '/location';
+
+  /// Area picker for a city. Takes a city name.
+  static const String locationAreas = '/location/:city';
+
+  /// Builds an area picker path for [city].
+  static String locationAreasPath(String city) =>
+      '/location/${Uri.encodeComponent(city)}';
 }

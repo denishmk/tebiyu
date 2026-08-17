@@ -6,6 +6,8 @@ import 'package:tebiyu/core/router/go_router_refresh_stream.dart';
 import 'package:tebiyu/core/router/routes.dart';
 import 'package:tebiyu/features/auth/data/auth_providers.dart';
 import 'package:tebiyu/features/auth/screens/auth_screen.dart';
+import 'package:tebiyu/features/location/screens/area_picker_screen.dart';
+import 'package:tebiyu/features/location/screens/location_picker_screen.dart';
 import 'package:tebiyu/features/onboarding/screens/onboarding_screen.dart';
 import 'package:tebiyu/features/shell/screens/app_shell.dart';
 import 'package:tebiyu/features/shell/screens/placeholder_screen.dart';
@@ -58,6 +60,16 @@ final Provider<GoRouter> goRouterProvider = Provider<GoRouter>((ref) {
         path: Routes.auth,
         builder: (context, state) =>
             AuthScreen(returnTo: state.uri.queryParameters['from']),
+      ),
+      GoRoute(
+        path: Routes.location,
+        builder: (context, state) => const LocationPickerScreen(),
+      ),
+      GoRoute(
+        path: Routes.locationAreas,
+        builder: (context, state) => AreaPickerScreen(
+          cityName: Uri.decodeComponent(state.pathParameters['city'] ?? ''),
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
