@@ -97,7 +97,7 @@ class MockListingRepository implements ListingRepository {
     _watchers[id]?.add(updated);
   }
 
-    /// Releases the streams opened by [watchById].
+  /// Releases the streams opened by [watchById].
   void dispose() {
     for (final controller in _watchers.values) {
       unawaited(controller.close());
