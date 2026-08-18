@@ -36,9 +36,10 @@ class MockListingRepository implements ListingRepository {
   }
 
   @override
-  Future<List<Listing>> fetchRecommended({
+  Future<FeedResult> fetchRecommended({
     String? city,
     int limit = 10,
+    bool forceRefresh = false,
   }) async {
     await _wait();
     final pool = _listings.where((l) => l.status.isPublic).toList()
@@ -51,11 +52,15 @@ class MockListingRepository implements ListingRepository {
         }
         return b.createdAt.compareTo(a.createdAt);
       });
-    return pool.take(limit).toList();
+    return FeedResult.network(pool.take(limit).toList());
   }
 
   @override
-  Future<List<Listing>> fetchTrending({String? city, int limit = 12}) async {
+  Future<FeedResult> fetchTrending({
+    String? city,
+    int limit = 12,
+    bool forceRefresh = false,
+  }) async {
     await _wait();
     final cutoff = DateTime.now().subtract(const Duration(days: 30));
     final pool =
@@ -64,7 +69,7 @@ class MockListingRepository implements ListingRepository {
             .where((l) => city == null || l.city == city)
             .toList()
           ..sort((a, b) => b.views.compareTo(a.views));
-    return pool.take(limit).toList();
+    return FeedResult.network(pool.take(limit).toList());
   }
 
   @override

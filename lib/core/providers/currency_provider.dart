@@ -37,7 +37,7 @@ class CurrencyFilterNotifier extends Notifier<CurrencyFilter> {
   @override
   CurrencyFilter build() => CurrencyFilter.all;
 
-    /// The active filter.
+  /// The active filter.
   CurrencyFilter get filter => state;
 
   /// Changes the active filter.

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tebiyu/core/models/listing.dart';
+import 'package:tebiyu/core/repositories/listing_repository.dart';
 import 'package:tebiyu/core/repositories/listing_repository_provider.dart';
 
 /// Listings for the "Recommended for you" rail.
@@ -11,8 +11,8 @@ import 'package:tebiyu/core/repositories/listing_repository_provider.dart';
 /// branch, so tab switches would otherwise refetch the whole feed every
 /// time the user glances at Messages and comes back. Refresh is explicit,
 /// through [refreshHomeFeed].
-final FutureProviderFamily<List<Listing>, String?> recommendedListingsProvider =
-    FutureProvider.family<List<Listing>, String?>((ref, city) {
+final FutureProviderFamily<FeedResult, String?> recommendedListingsProvider =
+    FutureProvider.family<FeedResult, String?>((ref, city) {
       final repository = ref.watch(listingRepositoryProvider);
       return repository.fetchRecommended(city: city);
     });
@@ -21,20 +21,34 @@ final FutureProviderFamily<List<Listing>, String?> recommendedListingsProvider =
 ///
 /// Ranked by views within a recent window rather than by recency, so a
 /// quiet day does not empty the grid.
-final FutureProviderFamily<List<Listing>, String?> trendingListingsProvider =
-    FutureProvider.family<List<Listing>, String?>((ref, city) {
+final FutureProviderFamily<FeedResult, String?> trendingListingsProvider =
+    FutureProvider.family<FeedResult, String?>((ref, city) {
       final repository = ref.watch(listingRepositoryProvider);
       return repository.fetchTrending(city: city);
     });
 
-/// Reloads both Home feeds for [city].
+/// Reloads both Home feeds for [city], bypassing the cache window.
 ///
 /// Wire this to pull-to-refresh. Returns once both requests settle so the
 /// refresh indicator does not vanish before the new data lands.
-Future<void> refreshHomeFeed(Ref ref, String? city) async {
+///
+/// Takes a [WidgetRef] rather than a [Ref] because it is called from the
+/// Home screen, and Riverpod keeps those two types separate.
+Future<void> refreshHomeFeed(WidgetRef ref, String? city) async {
+  final repository = ref.read(listingRepositoryProvider);
+
+  // Force past the freshness window first, so a deliberate pull always
+  // reaches the network. The provider invalidation below then reads the
+  // cache this just refilled.
+  await Future.wait<void>(<Future<void>>[
+    repository.fetchRecommended(city: city, forceRefresh: true),
+    repository.fetchTrending(city: city, forceRefresh: true),
+  ]);
+
   ref
     ..invalidate(recommendedListingsProvider(city))
     ..invalidate(trendingListingsProvider(city));
+
   await Future.wait<void>(<Future<void>>[
     ref.read(recommendedListingsProvider(city).future),
     ref.read(trendingListingsProvider(city).future),
