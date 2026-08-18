@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:tebiyu/core/router/app_router.dart';
+import 'package:tebiyu/core/services/listing_cache_service.dart';
 import 'package:tebiyu/core/services/preferences_service.dart';
 import 'package:tebiyu/core/theme/app_theme.dart';
 import 'package:tebiyu/features/location/data/location_providers.dart';
@@ -20,6 +21,10 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Opened before runApp so the first frame can read cached listings
+  // synchronously instead of waiting on a future.
+  await ListingCacheService.init();
 
   final location = await PreferencesService.location();
 
