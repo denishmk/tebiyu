@@ -52,8 +52,12 @@ class ListingCard extends ConsumerWidget {
   static const double _titleHeight = 16 * 1.4 * 2;
   static const double _priceHeight = 15 * 1.25;
   static const double _metaHeight = 11 * 1.4;
-  static const double _chromeHeight =
-      AppSpacing.md * 2 + AppSpacing.xs + AppSpacing.sm;
+  static const double _sellerHeight = 11 * 1.4;
+  static const double _verifiedHeight = 11 * 1.4;
+  static const double _chromeHeight = AppSpacing.md * 2 +
+      AppSpacing.xs +
+      AppSpacing.sm +
+      AppSpacing.xs * 2;
 
   /// The height a card needs when laid out [cellWidth] wide.
   ///
@@ -70,7 +74,13 @@ class ListingCard extends ConsumerWidget {
     TextScaler scaler = TextScaler.noScaling,
   }) {
     final image = cellWidth / imageAspectRatio;
-    final text = scaler.scale(_titleHeight + _priceHeight + _metaHeight);
+    final text = scaler.scale(
+      _titleHeight +
+          _priceHeight +
+          _metaHeight +
+          _sellerHeight +
+          _verifiedHeight,
+    );
     return image + text + _chromeHeight;
   }
 
@@ -138,6 +148,8 @@ class ListingCard extends ConsumerWidget {
                     ),
                     AppSpacing.gapSm,
                     _MetaRow(listing: listing),
+                    AppSpacing.gapXs,
+                    _SellerRow(listing: listing),
                   ],
                 ),
               ),
@@ -305,6 +317,71 @@ class _MetaRow extends StatelessWidget {
         ),
         AppSpacing.hGapXs,
         Text(Formatters.timeAgo(listing.createdAt), style: caption),
+      ],
+    );
+  }
+}
+
+/// Seller attribution beneath a listing's details.
+///
+/// Reads the denormalized [Listing.sellerName] and [Listing.sellerVerified]
+/// rather than looking the seller up. Firestore has no joins, so a lookup
+/// here would mean a second read per card and a grid that fills in raggedly
+/// as each one lands.
+class _SellerRow extends StatelessWidget {
+  const _SellerRow({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final caption = AppTextStyles.caption.copyWith(
+      color: colors.secondaryText,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(
+              Icons.person_outline,
+              size: 12,
+              color: colors.secondaryIcon,
+            ),
+            const SizedBox(width: AppSpacing.xxs),
+            Expanded(
+              child: Text(
+                listing.sellerName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: caption,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        // The badge line is reserved whether or not the seller is verified.
+        // Cards sit in a grid with one fixed height, so collapsing the row
+        // on unverified sellers would not shorten the card, it would just
+        // shift every row above it and break alignment across the grid.
+        SizedBox(
+          height: AppTextStyles.caption.fontSize! * 1.4,
+          child: listing.sellerVerified
+              ? Row(
+                  children: <Widget>[
+                    Icon(Icons.verified, size: 12, color: colors.info),
+                    const SizedBox(width: AppSpacing.xxs),
+                    Text(
+                      'Verified seller',
+                      style: AppTextStyles.label.copyWith(color: colors.info),
+                    ),
+                  ],
+                )
+              : null,
+        ),
       ],
     );
   }
