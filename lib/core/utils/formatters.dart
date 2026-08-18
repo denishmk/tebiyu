@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:tebiyu/core/models/listing.dart';
 
 /// Display formatting shared across listing surfaces.
@@ -33,6 +35,19 @@ abstract final class Formatters {
       ListingCurrency.ssp => 'SSP $grouped',
       ListingCurrency.usd => r'$' + grouped,
     };
+  }
+
+  /// Rounds [value] to [digits] significant figures.
+  ///
+  /// Converted prices carry false precision otherwise. An SSP price divided
+  /// by a hand-maintained rate lands on something like 153.33, and showing
+  /// that implies the rate is accurate to the cent when it is a round number
+  /// somebody typed into an admin panel last week.
+  static double roundToSignificant(double value, {int digits = 3}) {
+    if (value == 0) return 0;
+    final magnitude = (log(value.abs()) / ln10).floor();
+    final factor = pow(10, digits - 1 - magnitude).toDouble();
+    return (value * factor).round() / factor;
   }
 
   /// Formats [time] as a short relative string, for example `3h ago`.

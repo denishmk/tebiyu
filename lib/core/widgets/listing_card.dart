@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tebiyu/core/models/listing.dart';
+import 'package:tebiyu/core/providers/currency_provider.dart';
 import 'package:tebiyu/core/providers/saved_listings_provider.dart';
 import 'package:tebiyu/core/theme/app_colors.dart';
 import 'package:tebiyu/core/theme/app_radius.dart';
@@ -35,14 +36,43 @@ class ListingCard extends ConsumerWidget {
     this.onTap,
     this.variant = ListingCardVariant.grid,
     this.showSaveButton = true,
+    this.width,
     super.key,
   });
 
-  /// Width of a card in the [ListingCardVariant.rail] layout.
+  /// Default width of a card in the [ListingCardVariant.rail] layout.
   static const double railWidth = 168;
 
   /// Aspect ratio of the card image, matching the design's 4:3 crop.
   static const double imageAspectRatio = 4 / 3;
+
+  // Text block measurements, used by [extentFor]. Derived from the type
+  // scale: h4 is 16px at 1.4 line height, priceSmall 15px at 1.25, caption
+  // 11px at 1.4. Titles are allowed two lines.
+  static const double _titleHeight = 16 * 1.4 * 2;
+  static const double _priceHeight = 15 * 1.25;
+  static const double _metaHeight = 11 * 1.4;
+  static const double _chromeHeight =
+      AppSpacing.md * 2 + AppSpacing.xs + AppSpacing.sm;
+
+  /// The height a card needs when laid out [cellWidth] wide.
+  ///
+  /// Grids must size cards with `mainAxisExtent`, and that number has to be
+  /// derived rather than fixed: the image is a 4:3 crop of the cell, so its
+  /// height grows with column width. A constant tuned for a 168px phone
+  /// cell overflows by roughly 114px in a 362px tablet cell, which is
+  /// exactly the failure this replaces.
+  ///
+  /// [scaler] keeps the estimate honest when the user has enlarged system
+  /// text, which is common on the mid-range Android devices this targets.
+  static double extentFor(
+    double cellWidth, {
+    TextScaler scaler = TextScaler.noScaling,
+  }) {
+    final image = cellWidth / imageAspectRatio;
+    final text = scaler.scale(_titleHeight + _priceHeight + _metaHeight);
+    return image + text + _chromeHeight;
+  }
 
   /// The listing being shown.
   final Listing listing;
@@ -57,6 +87,12 @@ class ListingCard extends ConsumerWidget {
   ///
   /// Turned off on My Store, where saving your own listing is meaningless.
   final bool showSaveButton;
+
+  /// Width for the rail layout, defaulting to [railWidth].
+  ///
+  /// Set this to the grid's cell width on wider screens so a card in the
+  /// rail and a card in the grid below are the same size.
+  final double? width;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -93,7 +129,7 @@ class ListingCard extends ConsumerWidget {
                     ),
                     AppSpacing.gapXs,
                     Text(
-                      Formatters.price(listing.price, listing.currency),
+                      ref.watch(priceConverterProvider).format(listing).text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.priceSmall.copyWith(
@@ -113,7 +149,10 @@ class ListingCard extends ConsumerWidget {
 
     return switch (variant) {
       ListingCardVariant.grid => card,
-      ListingCardVariant.rail => SizedBox(width: railWidth, child: card),
+      ListingCardVariant.rail => SizedBox(
+          width: width ?? railWidth,
+          child: card,
+        ),
     };
   }
 }
