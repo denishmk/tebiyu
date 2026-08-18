@@ -9,6 +9,9 @@ import 'package:tebiyu/core/theme/app_text_styles.dart';
 import 'package:tebiyu/core/utils/formatters.dart';
 import 'package:tebiyu/core/widgets/listing_card.dart';
 import 'package:tebiyu/features/home/providers/home_feed_providers.dart';
+import 'package:tebiyu/features/home/widgets/category_row.dart';
+import 'package:tebiyu/features/home/widgets/home_header.dart';
+import 'package:tebiyu/features/home/widgets/promo_banner.dart';
 import 'package:tebiyu/features/location/data/location_providers.dart';
 
 /// The Home feed.
@@ -54,42 +57,51 @@ class HomeScreen extends ConsumerWidget {
     final railWidth = width < 600 ? ListingCard.railWidth : cellWidth;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Tebiyu', style: AppTextStyles.h2),
-        titleTextStyle: AppTextStyles.h2.copyWith(color: context.colors.brand),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => refreshHomeFeed(ref, city),
-        child: CustomScrollView(
-          slivers: <Widget>[
-            SliverToBoxAdapter(
-              child: _OfflineBanner(
-                recommended: recommended.valueOrNull,
-                trending: trending.valueOrNull,
-              ),
-            ),
-            const SliverToBoxAdapter(child: AppSpacing.gapMd),
-            const SliverToBoxAdapter(
-              child: _SectionHeader(title: 'Recommended for you'),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: ListingCard.extentFor(railWidth, scaler: scaler),
-                child: _RecommendedRail(
-                  feed: recommended,
-                  cardWidth: railWidth,
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: () => refreshHomeFeed(ref, city),
+          child: CustomScrollView(
+            slivers: <Widget>[
+              const SliverToBoxAdapter(child: HomeHeader()),
+              SliverToBoxAdapter(
+                child: _OfflineBanner(
+                  recommended: recommended.valueOrNull,
+                  trending: trending.valueOrNull,
                 ),
               ),
-            ),
-            const SliverToBoxAdapter(child: AppSpacing.gapXl),
-            const SliverToBoxAdapter(child: _SectionHeader(title: 'Trending')),
-            _TrendingGrid(
-              feed: trending,
-              extent: extent,
-              columns: columns,
-            ),
-            const SliverToBoxAdapter(child: AppSpacing.gapXxl),
-          ],
+              const SliverToBoxAdapter(child: AppSpacing.gapLg),
+              const SliverToBoxAdapter(child: PromoBanner()),
+              const SliverToBoxAdapter(child: AppSpacing.gapXl),
+              const SliverToBoxAdapter(
+                child: _SectionHeader(title: 'Browse categories'),
+              ),
+              const SliverToBoxAdapter(child: CategoryRow()),
+              const SliverToBoxAdapter(child: AppSpacing.gapXl),
+              const SliverToBoxAdapter(
+                child: _SectionHeader(title: 'Recommended for you'),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: ListingCard.extentFor(railWidth, scaler: scaler),
+                  child: _RecommendedRail(
+                    feed: recommended,
+                    cardWidth: railWidth,
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: AppSpacing.gapXl),
+              const SliverToBoxAdapter(
+                child: _SectionHeader(title: 'Trending'),
+              ),
+              _TrendingGrid(
+                feed: trending,
+                extent: extent,
+                columns: columns,
+              ),
+              const SliverToBoxAdapter(child: AppSpacing.gapXxl),
+            ],
+          ),
         ),
       ),
     );
