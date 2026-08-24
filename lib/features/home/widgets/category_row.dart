@@ -46,9 +46,13 @@ class _CategoryTile extends StatelessWidget {
 
   final TebiyuCategory category;
 
+  /// Rendered size of the tile artwork.
+  static const double _tileSize = 52;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final ratio = MediaQuery.devicePixelRatioOf(context);
 
     return SizedBox(
       width: 76,
@@ -62,14 +66,30 @@ class _CategoryTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
-                width: 52,
-                height: 52,
+                width: _tileSize,
+                height: _tileSize,
                 decoration: context.cardSurface(radius: AppRadius.allMd),
-                child: Icon(category.icon, color: colors.primaryIcon),
+                clipBehavior: Clip.antiAlias,
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Image.asset(
+                  category.imagePath,
+                  fit: BoxFit.contain,
+                  // The artwork is 256px and this slot is 52. Decoding at the
+                  // display size keeps eight tiles from holding roughly
+                  // twenty times the pixels the screen can show.
+                  cacheWidth: (_tileSize * ratio).round(),
+                  filterQuality: FilterQuality.medium,
+                  // A missing or unreadable asset falls back to the icon
+                  // rather than leaving a hole in the row.
+                  errorBuilder: (context, error, stack) => Icon(
+                    category.icon,
+                    color: colors.primaryIcon,
+                  ),
+                ),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                Categories.shortNameOf(category.name),
+                category.shortName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,

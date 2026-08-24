@@ -54,10 +54,8 @@ class ListingCard extends ConsumerWidget {
   static const double _metaHeight = 11 * 1.4;
   static const double _sellerHeight = 11 * 1.4;
   static const double _verifiedHeight = 11 * 1.4;
-  static const double _chromeHeight = AppSpacing.md * 2 +
-      AppSpacing.xs +
-      AppSpacing.sm +
-      AppSpacing.xs * 2;
+  static const double _chromeHeight =
+      AppSpacing.md * 2 + AppSpacing.xs + AppSpacing.sm + AppSpacing.xs * 2;
 
   /// The height a card needs when laid out [cellWidth] wide.
   ///
@@ -162,9 +160,9 @@ class ListingCard extends ConsumerWidget {
     return switch (variant) {
       ListingCardVariant.grid => card,
       ListingCardVariant.rail => SizedBox(
-          width: width ?? railWidth,
-          child: card,
-        ),
+        width: width ?? railWidth,
+        child: card,
+      ),
     };
   }
 }
@@ -271,8 +269,7 @@ class _SaveButton extends ConsumerWidget {
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () =>
-            ref.read(savedListingsProvider.notifier).toggle(listingId),
+        onTap: () => ref.read(savedListingsProvider.notifier).toggle(listingId),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xs),
           child: Icon(

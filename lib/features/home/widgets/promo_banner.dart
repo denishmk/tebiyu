@@ -12,8 +12,9 @@ import 'package:tebiyu/core/theme/app_text_styles.dart';
 /// Session scoped on purpose. Persisting a dismissal would hide the banner
 /// permanently after one tap, and this space becomes paid campaign
 /// inventory later. If it does become permanent, it should expire.
-final StateProvider<bool> promoBannerDismissedProvider =
-    StateProvider<bool>((ref) => false);
+final StateProvider<bool> promoBannerDismissedProvider = StateProvider<bool>(
+  (ref) => false,
+);
 
 /// One slide in the promo carousel.
 @immutable

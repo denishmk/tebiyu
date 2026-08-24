@@ -408,8 +408,11 @@ class _CardSkeletonState extends State<_CardSkeleton>
     );
   }
 
-  Widget _bar(Color color, {required double widthFactor, required double
-      height}) {
+  Widget _bar(
+    Color color, {
+    required double widthFactor,
+    required double height,
+  }) {
     return FractionallySizedBox(
       alignment: AlignmentDirectional.centerStart,
       widthFactor: widthFactor,

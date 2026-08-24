@@ -56,6 +56,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
+  image: ^4.9.2
   very_good_analysis: ^10.3.0
 
 # For information on the generic Dart part of this file, see the
@@ -63,18 +64,24 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
 
   assets:
-    - assets/images/
-    - assets/images/logo/
-    - assets/images/onboarding/
-    - assets/images/placeholders/
     - assets/icons/
+    - assets/images/logo/
+    - assets/images/categories/main/
+    - assets/images/categories/sub/babies_and_kids/
+    - assets/images/categories/sub/beauty_and_personal_care/
+    - assets/images/categories/sub/commercial_equipment/
+    - assets/images/categories/sub/electronics_and_appliances/
+    - assets/images/categories/sub/farm_and_agriculture/
+    - assets/images/categories/sub/fashion/
+    - assets/images/categories/sub/home_and_garden/
+    - assets/images/categories/sub/mobile_phones_and_accessories/
+    - assets/images/categories/sub/properties/
+    - assets/images/categories/sub/services/
+    - assets/images/categories/sub/sports_and_leisure/
+    - assets/images/categories/sub/vehicles/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

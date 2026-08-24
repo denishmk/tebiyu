@@ -22,10 +22,10 @@ enum CurrencyMode {
 
   /// The currency to render in, or null when showing sellers' own prices.
   ListingCurrency? get target => switch (this) {
-        CurrencyMode.all => null,
-        CurrencyMode.ssp => ListingCurrency.ssp,
-        CurrencyMode.usd => ListingCurrency.usd,
-      };
+    CurrencyMode.all => null,
+    CurrencyMode.ssp => ListingCurrency.ssp,
+    CurrencyMode.usd => ListingCurrency.usd,
+  };
 }
 
 /// The active currency mode.
@@ -33,8 +33,7 @@ enum CurrencyMode {
 /// Defaults to [CurrencyMode.all], which shows what each seller actually
 /// asked for. That is the only mode where no price on screen is an estimate.
 final NotifierProvider<CurrencyModeNotifier, CurrencyMode>
-    currencyModeProvider =
-    NotifierProvider<CurrencyModeNotifier, CurrencyMode>(
+currencyModeProvider = NotifierProvider<CurrencyModeNotifier, CurrencyMode>(
   CurrencyModeNotifier.new,
 );
 
@@ -109,10 +108,11 @@ class PriceConverter {
     };
 
     return DisplayPrice(
-      text: '≈ ${Formatters.price(
-        Formatters.roundToSignificant(converted),
-        target,
-      )}',
+      text:
+          '≈ ${Formatters.price(
+            Formatters.roundToSignificant(converted),
+            target,
+          )}',
       isApproximate: true,
     );
   }
@@ -121,8 +121,8 @@ class PriceConverter {
 /// The converter for the active mode and rate.
 final Provider<PriceConverter> priceConverterProvider =
     Provider<PriceConverter>((ref) {
-  return PriceConverter(
-    mode: ref.watch(currencyModeProvider),
-    rate: ref.watch(exchangeRateProvider),
-  );
-});
+      return PriceConverter(
+        mode: ref.watch(currencyModeProvider),
+        rate: ref.watch(exchangeRateProvider),
+      );
+    });
