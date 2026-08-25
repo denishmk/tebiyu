@@ -37,8 +37,7 @@ class ListingCursor {
     return ListingCursor(
       id: listing.id,
       createdAt: listing.createdAt,
-      price:
-          sort == ListingSort.priceLowToHigh ||
+      price: sort == ListingSort.priceLowToHigh ||
               sort == ListingSort.priceHighToLow
           ? listing.price
           : null,
@@ -277,8 +276,8 @@ class FeedResult {
 
   /// A result carrying freshly fetched listings.
   const FeedResult.network(this.listings)
-    : source = FeedSource.network,
-      cachedAt = null;
+      : source = FeedSource.network,
+        cachedAt = null;
 
   /// The listings themselves.
   final List<Listing> listings;
@@ -347,6 +346,20 @@ abstract class ListingRepository {
     int limit = 12,
     bool forceRefresh = false,
   });
+
+  /// Active listing counts keyed by subcategory name.
+  ///
+  /// Counting at read time is not viable. Firestore's `count()` aggregation
+  /// would mean one query per subcategory, and there are over a hundred of
+  /// them, so opening the Category screen would cost a hundred round trips.
+  /// The Firestore implementation reads a single counters document kept up
+  /// to date by a Cloud Function on listing create, delete and status
+  /// change.
+  ///
+  /// Counts are therefore eventually consistent by design: a listing posted
+  /// seconds ago may not be reflected yet. That is the right trade for a
+  /// number shown as a rough guide rather than a promise.
+  Future<Map<String, int>> fetchSubcategoryCounts();
 
   /// Fetches a single listing, or null when it no longer exists.
   Future<Listing?> fetchById(String id);

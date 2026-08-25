@@ -1,28 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// A subcategory within a [TebiyuCategory].
+/// A second level entry beneath a [TebiyuCategory].
 @immutable
-class Subcategory {
-  /// Creates a subcategory that has artwork.
-  const Subcategory(this.name, this.slug, {this.imageExtension = 'jpg'});
+class TebiyuSubcategory {
+  /// Creates a subcategory.
+  const TebiyuSubcategory({required this.name, required this.slug});
 
-  /// Creates a subcategory with no artwork yet.
-  ///
-  /// The Category screen falls back to a tinted tile carrying the parent
-  /// category's icon rather than rendering a gap.
-  const Subcategory.withoutImage(this.name, this.slug) : imageExtension = null;
-
-  /// Display name, for example Mobile Phones.
+  /// Display name, also the value stored on a listing.
   final String name;
 
-  /// Stable identifier used in routes, Firestore queries and asset paths.
+  /// File-safe identifier, used to locate this subcategory's artwork.
+  ///
+  /// Also the right value to put in a URL when subcategory deep links
+  /// arrive, which is why it is stored rather than derived from [name]:
+  /// deriving would break every link the moment a name is reworded.
   final String slug;
 
-  /// File extension of the artwork, or null when there is none.
-  final String? imageExtension;
-
-  /// Whether artwork exists for this subcategory.
-  bool get hasImage => imageExtension != null;
+  /// Bundled image for this subcategory.
+  String get imagePath => Categories.assetPathFor(slug);
 }
 
 /// A top level category in Tebiyu's taxonomy.
@@ -36,302 +31,332 @@ class TebiyuCategory {
     required this.subcategories,
   });
 
-  /// Display name, shown to users.
-  ///
-  /// Safe to reword: listings store [slug], not this.
+  /// Display name, also the value stored on a listing.
   final String name;
 
-  /// Stable identifier stored on every listing.
-  ///
-  /// Never change one after listings exist. A rename orphans every listing
-  /// filed under the old value, and there is no cheap migration.
-  final String slug;
-
-  /// Fallback icon, used where artwork is missing or a tile is too small to
-  /// carry a photograph.
+  /// Fallback icon, shown when [imagePath] has no bundled file yet.
   final IconData icon;
 
-  /// The subcategories filed under this category.
-  final List<Subcategory> subcategories;
+  /// Second level entries beneath this category.
+  final List<TebiyuSubcategory> subcategories;
 
-  /// Path to the category artwork.
-  String get imagePath => 'assets/images/categories/main/$slug.png';
+  /// File-safe identifier, used to locate this category's artwork.
+  final String slug;
 
-  /// Path to [subcategory]'s artwork, or null when it has none.
-  String? imagePathFor(Subcategory subcategory) {
-    if (!subcategory.hasImage) return null;
-    return 'assets/images/categories/sub/$slug/'
-        '${subcategory.slug}.${subcategory.imageExtension}';
-  }
+  /// Bundled image for this category.
+  String get imagePath => Categories.assetPathFor(slug);
 
-  /// A short label for the home category row, where the full name will not
-  /// fit under a small tile.
-  String get shortName => Categories.shortNames[slug] ?? name;
+  /// Short label for tight spaces such as the Home category row.
+  ///
+  /// Falls back to [name] when no abbreviation is needed.
+  String get shortName => Categories.shortNames[name] ?? name;
 }
 
 /// Tebiyu's category taxonomy.
 ///
-/// Single source of truth for the home category row, the Category screen, the
-/// listing form's picker and the admin panel. Item counts are deliberately
-/// absent: those come from Firestore at read time, since a hardcoded count is
-/// wrong the moment anyone posts.
+/// The single source of truth for category and subcategory names. Listings
+/// store these strings, so renaming an entry without migrating existing
+/// documents orphans every listing that used the old name.
+///
+/// Held as Dart constants rather than a JSON asset. These names are needed
+/// at compile time by the router, the listing form and the admin filters,
+/// and a typo in a constant is a build error where a typo in JSON is a
+/// silent empty screen. The trade-off is that changing the taxonomy needs a
+/// release, which is the right constraint while listings reference these
+/// values by name.
 abstract final class Categories {
-  /// Every category, in display order.
+  /// Every top level category, in display order.
   static const List<TebiyuCategory> all = <TebiyuCategory>[
     TebiyuCategory(
       name: 'Electronics & Appliances',
-      slug: 'electronics_and_appliances',
+      slug: 'electronics',
       icon: Icons.devices,
-      subcategories: [
-        Subcategory('Computers & Laptops', 'computers_and_laptops'),
-        Subcategory('Computer Accessories', 'computer_accessories'),
-        Subcategory('TV & Video Equipment', 'tv_and_video_equipment'),
-        Subcategory('Audio Devices', 'audio_devices'),
-        Subcategory('Camera & Lenses', 'camera_and_lenses'),
-        Subcategory('Printers & Scanners', 'printers_and_scanners'),
-        Subcategory('Networking Products', 'networking_products'),
-        Subcategory('Washing Machines', 'washing_machines'),
-        Subcategory('Security & Surveillance', 'security_and_surveillance'),
-        Subcategory('Gaming & Consoles', 'gaming_and_consoles'),
-        Subcategory('Kitchen Appliances', 'kitchen_appliances'),
-        Subcategory('Content Creation Gear', 'content_creation_equipment'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Computers & Laptops', slug: 'laptops'),
+        TebiyuSubcategory(
+          name: 'Computer Accessories',
+          slug: 'pcaccessories',
+        ),
+        TebiyuSubcategory(name: 'TV & Video Equipment', slug: 'tvvideo'),
+        TebiyuSubcategory(name: 'Audio Devices', slug: 'audiodevices'),
+        TebiyuSubcategory(name: 'Camera & Lenses', slug: 'cameras'),
+        TebiyuSubcategory(name: 'Printers & Scanners', slug: 'printers'),
+        TebiyuSubcategory(
+          name: 'Networking Products',
+          slug: 'networking',
+        ),
+        TebiyuSubcategory(name: 'Washing Machines', slug: 'washing'),
+        TebiyuSubcategory(
+          name: 'Security & Surveillance',
+          slug: 'security',
+        ),
+        TebiyuSubcategory(
+          name: 'Refrigerators & Freezers',
+          slug: 'fridges',
+        ),
+        TebiyuSubcategory(name: 'Gaming Consoles', slug: 'consoles'),
+        TebiyuSubcategory(name: 'Kitchen Appliances', slug: 'kitchenapp'),
+        TebiyuSubcategory(
+          name: 'Content Creation Gear',
+          slug: 'contentgear',
+        ),
       ],
     ),
     TebiyuCategory(
       name: 'Mobile Phones & Accessories',
-      slug: 'mobile_phones_and_accessories',
+      slug: 'mobilephones',
       icon: Icons.smartphone,
-      subcategories: [
-        Subcategory('Mobile Phones', 'mobile_phones'),
-        Subcategory('Cases, Covers & Skins', 'cases_covers_and_skins'),
-        Subcategory('Chargers & Cables', 'chargers_and_cables'),
-        Subcategory('Power Banks', 'power_banks'),
-        Subcategory('Headphones & Earbuds', 'headphones_and_earbuds'),
-        Subcategory('Bluetooth Speakers', 'bluetooth_speakers'),
-        Subcategory('Car Accessories', 'car_accessories'),
-        Subcategory('Memory Cards', 'memory_cards'),
-        Subcategory('Batteries', 'batteries_replacement'),
-        Subcategory('Selfie Sticks & Tripods', 'selfie_sticks_and_tripods'),
-        Subcategory('Wearables', 'wearables'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Mobile Phones', slug: 'phones'),
+        TebiyuSubcategory(
+          name: 'Cases, Covers & Skins',
+          slug: 'phonecases',
+        ),
+        TebiyuSubcategory(name: 'Screen Protectors', slug: 'protectors'),
+        TebiyuSubcategory(name: 'Chargers & Cables', slug: 'chargers'),
+        TebiyuSubcategory(name: 'Power Banks', slug: 'powerbanks'),
+        TebiyuSubcategory(
+          name: 'Headphones & Earbuds',
+          slug: 'headphones',
+        ),
+        TebiyuSubcategory(name: 'Bluetooth Speakers', slug: 'speakers'),
+        TebiyuSubcategory(name: 'Car Accessories', slug: 'caraccess'),
+        TebiyuSubcategory(name: 'Memory Cards', slug: 'memorycards'),
+        TebiyuSubcategory(name: 'Replacement Batteries', slug: 'batts'),
+        TebiyuSubcategory(
+          name: 'Selfie Sticks & Tripods',
+          slug: 'tripods',
+        ),
+        TebiyuSubcategory(name: 'Wearables', slug: 'wearables'),
       ],
     ),
     TebiyuCategory(
       name: 'Properties',
       slug: 'properties',
       icon: Icons.apartment,
-      subcategories: [
-        Subcategory('Land & Plots', 'land_and_plots'),
-        Subcategory('Houses', 'houses'),
-        Subcategory('Apartments', 'apartments'),
-        Subcategory('Commercial Properties', 'commercial_properties'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Land & Plots', slug: 'land'),
+        TebiyuSubcategory(name: 'Houses', slug: 'houses'),
+        TebiyuSubcategory(name: 'Apartments', slug: 'apartments'),
+        TebiyuSubcategory(
+          name: 'Commercial Properties',
+          slug: 'commercialprop',
+        ),
       ],
     ),
     TebiyuCategory(
       name: 'Home & Garden',
-      slug: 'home_and_garden',
+      slug: 'homegarden',
       icon: Icons.chair_outlined,
-      subcategories: [
-        Subcategory('Furniture', 'furniture'),
-        Subcategory('Kitchen & Dining', 'kitchen_and_dining'),
-        Subcategory('Home Décor', 'home_decor'),
-        Subcategory('Lighting', 'lighting'),
-        Subcategory('Household Essentials', 'household_essentials'),
-        Subcategory('Bedding & Linen', 'bedding_and_linen'),
-        Subcategory('Home Security & Safety', 'home_security_and_safety'),
-        Subcategory('Home Appliances', 'home_appliances'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Furniture', slug: 'furniture'),
+        TebiyuSubcategory(name: 'Kitchen & Dining', slug: 'kitchendine'),
+        TebiyuSubcategory(name: 'Home Décor', slug: 'decor'),
+        TebiyuSubcategory(name: 'Lighting', slug: 'lighting'),
+        TebiyuSubcategory(
+          name: 'Household Essentials',
+          slug: 'household',
+        ),
+        TebiyuSubcategory(name: 'Bedding & Linen', slug: 'bedding'),
+        TebiyuSubcategory(
+          name: 'Home Security & Safety',
+          slug: 'homesafety',
+        ),
+        TebiyuSubcategory(name: 'Pet Supplies', slug: 'petsupplies'),
+        TebiyuSubcategory(name: 'Garden & Outdoor', slug: 'garden'),
       ],
     ),
     TebiyuCategory(
       name: 'Fashion',
       slug: 'fashion',
       icon: Icons.checkroom,
-      subcategories: [
-        Subcategory('Clothing', 'clothing'),
-        Subcategory('Footwear', 'footwear'),
-        Subcategory('Bags & Luggage', 'bags_and_luggage'),
-        Subcategory('Jewelry & Accessories', 'jewelry_and_accessories'),
-        Subcategory('Fashion Accessories', 'fashion_accessories'),
-        Subcategory('Outerwear', 'outerwear'),
-        Subcategory('Designer Fashion', 'designer_fashion'),
-        Subcategory('Tailoring & Custom', 'tailoring_and_custom_fashion'),
-        Subcategory('Second-hand Fashion', 'second_hand_fashion'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Clothing', slug: 'clothing'),
+        TebiyuSubcategory(name: 'Footwear', slug: 'footwear'),
+        TebiyuSubcategory(name: 'Bags & Luggage', slug: 'bags'),
+        TebiyuSubcategory(name: 'Jewelry & Accessories', slug: 'jewelry'),
+        TebiyuSubcategory(name: 'Outerwear', slug: 'outerwear'),
+        TebiyuSubcategory(name: 'Designer & Luxury', slug: 'designer'),
+        TebiyuSubcategory(name: 'Tailoring & Custom', slug: 'tailoring'),
+        TebiyuSubcategory(
+          name: 'Second-hand Fashion',
+          slug: 'secondhand',
+        ),
       ],
     ),
     TebiyuCategory(
       name: 'Vehicles',
       slug: 'vehicles',
       icon: Icons.directions_car_outlined,
-      subcategories: [
-        Subcategory('Cars', 'cars'),
-        Subcategory('SUVs', 'suv'),
-        Subcategory('Pickup Trucks', 'pickup_trucks'),
-        Subcategory('Vans', 'vans'),
-        Subcategory('Buses', 'buses'),
-        Subcategory('Motorcycles', 'motorcycles'),
-        Subcategory('Tuk-tuk & Cargo', 'tuk_tuk_and_cargo'),
-        Subcategory('Bicycles', 'bicycle'),
-        Subcategory('Heavy Machinery', 'heavy_machinery'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Cars', slug: 'cars'),
+        TebiyuSubcategory(name: 'SUV', slug: 'suv'),
+        TebiyuSubcategory(name: 'Pickup Trucks', slug: 'pickups'),
+        TebiyuSubcategory(name: 'Vans', slug: 'vans'),
+        TebiyuSubcategory(name: 'Buses', slug: 'buses'),
+        TebiyuSubcategory(name: 'Motorcycles', slug: 'motorcycles'),
+        TebiyuSubcategory(name: 'Tuk-tuk', slug: 'tuktuk'),
+        TebiyuSubcategory(name: 'Bicycles', slug: 'bicycles'),
+        TebiyuSubcategory(name: 'Heavy Machinery', slug: 'heavymach'),
       ],
     ),
     TebiyuCategory(
       name: 'Farm & Agriculture',
-      slug: 'farm_and_agriculture',
+      slug: 'farm',
       icon: Icons.agriculture,
-      subcategories: [
-        Subcategory('Farmland', 'farmland'),
-        Subcategory('Livestock', 'livestock'),
-        Subcategory('Produce', 'produce'),
-        Subcategory('Farm Equipment', 'equipment'),
-        Subcategory('Seeds & Fertilizers', 'seeds_and_fertilizers'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Farmland', slug: 'farmland'),
+        TebiyuSubcategory(name: 'Livestock', slug: 'livestock'),
+        TebiyuSubcategory(name: 'Produce', slug: 'produce'),
+        TebiyuSubcategory(name: 'Farm Equipment', slug: 'farmequip'),
+        TebiyuSubcategory(name: 'Seeds & Fertilizers', slug: 'seeds'),
       ],
     ),
     TebiyuCategory(
       name: 'Beauty & Personal Care',
-      slug: 'beauty_and_personal_care',
+      slug: 'beauty',
       icon: Icons.spa_outlined,
-      subcategories: [
-        Subcategory('Personal Care', 'personal_care'),
-        Subcategory('Body Care', 'body_care'),
-        Subcategory('Oral Care', 'oral_care'),
-        Subcategory('Skin Care', 'skin_care'),
-        Subcategory('Fragrance', 'fragrance'),
-        Subcategory('Nail Care', 'nail_care'),
-        Subcategory('Wigs & Hair Care', 'wigs_and_hair_care'),
-        Subcategory('Watches & Wearables', 'watches_and_wearables'),
-        Subcategory('Eyeglasses', 'eye_glasses'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Personal Care', slug: 'personalcare'),
+        TebiyuSubcategory(name: 'Body Care', slug: 'bodycare'),
+        TebiyuSubcategory(name: 'Oral Care', slug: 'oralcare'),
+        TebiyuSubcategory(name: 'Skin Care', slug: 'skincare'),
+        TebiyuSubcategory(name: 'Fragrance', slug: 'fragrance'),
+        TebiyuSubcategory(name: 'Nail Care', slug: 'nailcare'),
+        TebiyuSubcategory(name: 'Wigs & Hair Care', slug: 'haircare'),
+        TebiyuSubcategory(name: 'Eyeglasses', slug: 'eyeglasses'),
       ],
     ),
     TebiyuCategory(
       name: 'Sports & Leisure',
-      slug: 'sports_and_leisure',
+      slug: 'sports',
       icon: Icons.sports_soccer,
-      subcategories: [
-        Subcategory('Sport Equipment', 'sport_equipment'),
-        Subcategory('Fitness & Gym Equipment', 'fitness_and_gym_equipment'),
-        Subcategory('Outdoor & Camping', 'outdoor_and_camping'),
-        Subcategory('Cycling', 'cycling'),
-        Subcategory('Water Sports', 'water_sports'),
-        Subcategory('Gaming & Recreation', 'gaming_and_recreation'),
-        Subcategory('Sportswear & Accessories', 'sportswear_and_accessories'),
-        Subcategory('Musical Instruments', 'musical_instruments'),
-        Subcategory('Leisure Activities', 'leisure_activities'),
-        Subcategory('Personal Satisfaction', 'personal_satisfaction'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Sports Equipment', slug: 'sportsequip'),
+        TebiyuSubcategory(name: 'Fitness & Gym', slug: 'gym'),
+        TebiyuSubcategory(name: 'Outdoor & Camping', slug: 'camping'),
+        TebiyuSubcategory(name: 'Cycling', slug: 'cycling'),
+        TebiyuSubcategory(name: 'Water Sports', slug: 'watersports'),
+        TebiyuSubcategory(name: 'Gaming & Recreation', slug: 'gaming'),
+        TebiyuSubcategory(name: 'Sportswear', slug: 'sportswear'),
+        TebiyuSubcategory(
+          name: 'Musical Instruments',
+          slug: 'instruments',
+        ),
       ],
     ),
     TebiyuCategory(
       name: 'Services',
       slug: 'services',
       icon: Icons.handyman_outlined,
-      subcategories: [
-        Subcategory(
-          'Event Planning & Materials',
-          'event_planning_and_materials',
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Event Services', slug: 'events'),
+        TebiyuSubcategory(name: 'Personal Services', slug: 'personalsvc'),
+        TebiyuSubcategory(name: 'Health & Wellness', slug: 'wellness'),
+        TebiyuSubcategory(name: 'Photo & Video', slug: 'photovideo'),
+        TebiyuSubcategory(name: 'IT & Digital', slug: 'itdigital'),
+        TebiyuSubcategory(
+          name: 'Transport & Logistics',
+          slug: 'logistics',
         ),
-        Subcategory('Personal Services', 'personal_care_services'),
-        Subcategory('Health & Wellness', 'health_and_wellness_services'),
-        Subcategory(
-          'Photography & Videography',
-          'photography_and_videography_services',
+        TebiyuSubcategory(name: 'Repair & Maintenance', slug: 'repairs'),
+        TebiyuSubcategory(
+          name: 'Construction & Building',
+          slug: 'buildingsvc',
         ),
-        Subcategory(
-          'IT & Digital Services',
-          'it_and_digital_services',
-          imageExtension: 'png',
-        ),
-        Subcategory('Transport & Logistics', 'transport_and_logistics'),
-        Subcategory('Repair & Maintenance', 'repair_and_maintenance_services'),
-        Subcategory(
-          'Construction & Building',
-          'construction_and_building_services',
-        ),
+        TebiyuSubcategory(name: 'Cleaning Services', slug: 'cleaning'),
       ],
     ),
     TebiyuCategory(
-      name: 'Babies & Kids',
-      slug: 'babies_and_kids',
+      name: 'Baby & Kids',
+      slug: 'babykids',
       icon: Icons.child_friendly_outlined,
-      subcategories: [
-        Subcategory('Baby Gear', 'baby_gear'),
-        Subcategory('Nursery Furniture', 'nursery_furniture'),
-        Subcategory('Baby & Kid Clothing', 'baby_and_kid_clothing'),
-        Subcategory('Toys & Games', 'toys_and_games'),
-        Subcategory('Books & School Supplies', 'books_and_school_supplies'),
-        Subcategory('Feeding Essentials', 'feeding_essentials'),
-        Subcategory('Baby Care & Safety', 'baby_care_and_safety'),
-        Subcategory(
-          'Maternity & Pregnancy',
-          'maternity_and_pregnancy_supplies',
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Baby Gear', slug: 'babygear'),
+        TebiyuSubcategory(name: 'Nursery Furniture', slug: 'nursery'),
+        TebiyuSubcategory(name: 'Baby & Kid Clothing', slug: 'kidcloth'),
+        TebiyuSubcategory(name: 'Toys & Games', slug: 'toys'),
+        TebiyuSubcategory(name: 'Books & School', slug: 'schoolbooks'),
+        TebiyuSubcategory(name: 'Feeding Essentials', slug: 'feeding'),
+        TebiyuSubcategory(name: 'Baby Care & Safety', slug: 'babysafety'),
+        TebiyuSubcategory(
+          name: 'Maternity & Pregnancy',
+          slug: 'maternity',
         ),
       ],
     ),
     TebiyuCategory(
-      name: 'Commercial Equipment',
-      slug: 'commercial_equipment',
+      name: 'Commercial Equipment & Tools',
+      slug: 'commercial',
       icon: Icons.construction_outlined,
-      subcategories: [
-        Subcategory('Construction Equipment', 'construction_equipment'),
-        Subcategory('Hand & Power Tools', 'hand_and_power_tools'),
-        Subcategory('Shop & Retail Equipment', 'shop_and_retail_equipment'),
-        Subcategory(
-          'Restaurant & Catering',
-          'restaurant_and_catering_equipment',
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(
+          name: 'Construction Equipment',
+          slug: 'constequip',
         ),
-        Subcategory('Office Equipment', 'office_equipment'),
-        Subcategory('Industrial Equipment', 'industrial_equipment'),
-        Subcategory('Agricultural Equipment', 'agricultural_equipment'),
-        Subcategory(
-          'Electrical & Mechanical',
-          'electrical_and_mechanical_equipment',
+        TebiyuSubcategory(name: 'Hand & Power Tools', slug: 'powertools'),
+        TebiyuSubcategory(name: 'Shop & Retail', slug: 'retailequip'),
+        TebiyuSubcategory(name: 'Restaurant & Catering', slug: 'catering'),
+        TebiyuSubcategory(name: 'Office Equipment', slug: 'officeequip'),
+        TebiyuSubcategory(
+          name: 'Industrial Equipment',
+          slug: 'industrial',
         ),
-        Subcategory('Safety Equipment', 'safety_equipment'),
+        TebiyuSubcategory(
+          name: 'Electrical & Mechanical',
+          slug: 'electrical',
+        ),
+        TebiyuSubcategory(name: 'Safety Equipment', slug: 'safetyequip'),
       ],
     ),
     TebiyuCategory(
       name: 'Jobs',
       slug: 'jobs',
       icon: Icons.work_outline,
-      // No artwork sourced yet, so these fall back to tinted icon tiles.
-      subcategories: [
-        Subcategory.withoutImage('Casual Jobs', 'casual_jobs'),
-        Subcategory.withoutImage('NGO & INGO Jobs', 'ngo_jobs'),
-        Subcategory.withoutImage('Company Jobs', 'company_jobs'),
+      subcategories: <TebiyuSubcategory>[
+        TebiyuSubcategory(name: 'Casual Jobs', slug: 'casualjobs'),
+        TebiyuSubcategory(name: 'NGO & INGO Jobs', slug: 'ngojobs'),
+        TebiyuSubcategory(name: 'Company Jobs', slug: 'companyjobs'),
       ],
     ),
   ];
 
-  /// Short labels for the home category row, keyed by slug.
+  /// Directory holding category and subcategory artwork.
+  static const String assetDirectory = 'assets/images/categories';
+
+  /// Extension used by every category image.
   ///
-  /// Only the long names appear here. Anything absent falls back to its full
-  /// name via [TebiyuCategory.shortName].
+  /// WebP rather than PNG: roughly a third of the size at the same visual
+  /// quality, which matters when a hundred-odd images ship in the APK and
+  /// the target device is a mid-range Android on a metered connection.
+  static const String assetExtension = 'webp';
+
+  /// The bundled image path for [slug].
+  static String assetPathFor(String slug) =>
+      '$assetDirectory/$slug.$assetExtension';
+
+  /// A short label for the Home category row, where full names do not fit.
+  ///
+  /// Only long names are shortened. Anything absent falls back to its full
+  /// name.
   static const Map<String, String> shortNames = <String, String>{
-    'electronics_and_appliances': 'Electronics',
-    'mobile_phones_and_accessories': 'Phones',
-    'home_and_garden': 'Home',
-    'farm_and_agriculture': 'Farm',
-    'beauty_and_personal_care': 'Beauty',
-    'sports_and_leisure': 'Sports',
-    'babies_and_kids': 'Kids',
-    'commercial_equipment': 'Tools',
+    'Electronics & Appliances': 'Electronics',
+    'Mobile Phones & Accessories': 'Phones',
+    'Home & Garden': 'Home',
+    'Farm & Agriculture': 'Farm',
+    'Beauty & Personal Care': 'Beauty',
+    'Sports & Leisure': 'Sports',
+    'Baby & Kids': 'Kids',
+    'Commercial Equipment & Tools': 'Tools',
   };
 
-  /// Finds a category by [slug], or null if there is no match.
-  static TebiyuCategory? bySlug(String slug) {
-    for (final category in all) {
-      if (category.slug == slug) return category;
-    }
-    return null;
-  }
+  /// The short label for [name].
+  static String shortNameOf(String name) => shortNames[name] ?? name;
 
-  /// Finds a subcategory anywhere in the taxonomy.
-  static ({TebiyuCategory category, Subcategory subcategory})? findSubcategory(
-    String slug,
-  ) {
+  /// The category called [name], or null when there is no such category.
+  static TebiyuCategory? byName(String name) {
     for (final category in all) {
-      for (final subcategory in category.subcategories) {
-        if (subcategory.slug == slug) {
-          return (category: category, subcategory: subcategory);
-        }
-      }
+      if (category.name == name) return category;
     }
     return null;
   }

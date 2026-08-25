@@ -65,9 +65,9 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
-
   assets:
     - assets/icons/
+    - assets/images/categories/
     - assets/images/logo/
     - assets/images/categories/main/
     - assets/images/categories/sub/babies_and_kids/

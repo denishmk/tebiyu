@@ -6,6 +6,7 @@ import 'package:tebiyu/core/router/go_router_refresh_stream.dart';
 import 'package:tebiyu/core/router/routes.dart';
 import 'package:tebiyu/features/auth/data/auth_providers.dart';
 import 'package:tebiyu/features/auth/screens/auth_screen.dart';
+import 'package:tebiyu/features/category/screens/category_screen.dart';
 import 'package:tebiyu/features/home/screens/home_screen.dart';
 import 'package:tebiyu/features/location/screens/area_picker_screen.dart';
 import 'package:tebiyu/features/location/screens/location_picker_screen.dart';
@@ -77,14 +78,7 @@ final Provider<GoRouter> goRouterProvider = Provider<GoRouter>((ref) {
             AppShell(navigationShell: navigationShell),
         branches: [
           _branch(Routes.home, const HomeScreen()),
-          _branch(
-            Routes.categories,
-            const PlaceholderScreen(
-              title: 'Categories',
-              icon: Icons.grid_view_outlined,
-              phase: 'P2.2',
-            ),
-          ),
+          _branch(Routes.categories, const CategoryScreen()),
           _branch(
             Routes.saved,
             const PlaceholderScreen(

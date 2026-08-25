@@ -63,13 +63,23 @@ class MockListingRepository implements ListingRepository {
   }) async {
     await _wait();
     final cutoff = DateTime.now().subtract(const Duration(days: 30));
-    final pool =
-        _listings
-            .where((l) => l.status.isPublic && l.createdAt.isAfter(cutoff))
-            .where((l) => city == null || l.city == city)
-            .toList()
-          ..sort((a, b) => b.views.compareTo(a.views));
+    final pool = _listings
+        .where((l) => l.status.isPublic && l.createdAt.isAfter(cutoff))
+        .where((l) => city == null || l.city == city)
+        .toList()
+      ..sort((a, b) => b.views.compareTo(a.views));
     return FeedResult.network(pool.take(limit).toList());
+  }
+
+  @override
+  Future<Map<String, int>> fetchSubcategoryCounts() async {
+    await _wait();
+    final counts = <String, int>{};
+    for (final listing in _listings) {
+      if (!listing.status.isPublic) continue;
+      counts[listing.subcategory] = (counts[listing.subcategory] ?? 0) + 1;
+    }
+    return counts;
   }
 
   @override

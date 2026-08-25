@@ -7,6 +7,7 @@ import 'package:tebiyu/core/theme/app_radius.dart';
 import 'package:tebiyu/core/theme/app_shadows.dart';
 import 'package:tebiyu/core/theme/app_spacing.dart';
 import 'package:tebiyu/core/theme/app_text_styles.dart';
+import 'package:tebiyu/core/widgets/category_image.dart';
 
 /// A horizontal strip of top level categories.
 ///
@@ -52,7 +53,6 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final ratio = MediaQuery.devicePixelRatioOf(context);
 
     return SizedBox(
       width: 76,
@@ -71,20 +71,14 @@ class _CategoryTile extends StatelessWidget {
                 decoration: context.cardSurface(radius: AppRadius.allMd),
                 clipBehavior: Clip.antiAlias,
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Image.asset(
-                  category.imagePath,
+                child: CategoryImage(
+                  path: category.imagePath,
+                  fallbackIcon: category.icon,
+                  // Contain rather than cover: the artwork sits inside a
+                  // padded card here, so cropping would cut the subject.
+                  // The Category screen fills its tile instead.
                   fit: BoxFit.contain,
-                  // The artwork is 256px and this slot is 52. Decoding at the
-                  // display size keeps eight tiles from holding roughly
-                  // twenty times the pixels the screen can show.
-                  cacheWidth: (_tileSize * ratio).round(),
-                  filterQuality: FilterQuality.medium,
-                  // A missing or unreadable asset falls back to the icon
-                  // rather than leaving a hole in the row.
-                  errorBuilder: (context, error, stack) => Icon(
-                    category.icon,
-                    color: colors.primaryIcon,
-                  ),
+                  renderSize: _tileSize,
                 ),
               ),
               const SizedBox(height: AppSpacing.xs),

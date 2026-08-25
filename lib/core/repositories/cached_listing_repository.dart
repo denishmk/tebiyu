@@ -68,6 +68,10 @@ class CachedListingRepository implements ListingRepository {
       inner.fetchListings(query);
 
   @override
+  Future<Map<String, int>> fetchSubcategoryCounts() =>
+      inner.fetchSubcategoryCounts();
+
+  @override
   Future<Listing?> fetchById(String id) => inner.fetchById(id);
 
   @override
@@ -85,8 +89,7 @@ class CachedListingRepository implements ListingRepository {
     final key = ListingCacheService.feedKey(feed, city);
     final cached = ListingCacheService.readFeed(key);
 
-    final canReuse =
-        cached != null &&
+    final canReuse = cached != null &&
         !forceRefresh &&
         !cached.isStale(refetchAfter) &&
         cached.listings.isNotEmpty;
