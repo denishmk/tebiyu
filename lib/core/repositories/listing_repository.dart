@@ -84,6 +84,7 @@ class ListingQuery {
     this.brand,
     this.attributes = const <String, String>{},
     this.attributeRanges = const <String, ({num? min, num? max})>{},
+    this.attributeSets = const <String, Set<String>>{},
     this.minPrice,
     this.maxPrice,
     this.currency,
@@ -91,6 +92,11 @@ class ListingQuery {
     this.sellerId,
     this.negotiableOnly = false,
     this.promotedOnly = false,
+    this.sellerType,
+    this.verifiedSellersOnly = false,
+    this.deliveryOnly = false,
+    this.withPhotosOnly = false,
+    this.postedAfter,
     this.sort = ListingSort.latest,
     this.limit = 20,
     this.startAfter,
@@ -132,6 +138,14 @@ class ListingQuery {
   /// Numeric attribute bounds, for example `{'Year': (min: 2015, max: null)}`.
   final Map<String, ({num? min, num? max})> attributeRanges;
 
+  /// Multi-select attribute requirements, such as house amenities.
+  ///
+  /// A listing matches when its value for the key contains every selected
+  /// entry. Values are stored comma separated today, which the mock can
+  /// search but Firestore cannot: the Firestore implementation will need
+  /// these attributes stored as arrays so `array-contains` can be used.
+  final Map<String, Set<String>> attributeSets;
+
   /// Lower price bound, inclusive.
   final double? minPrice;
 
@@ -152,6 +166,25 @@ class ListingQuery {
 
   /// Restricts to boosted listings.
   final bool promotedOnly;
+
+  /// Restricts to individual or business sellers.
+  final SellerType? sellerType;
+
+  /// Restricts to sellers who have passed identity verification.
+  final bool verifiedSellersOnly;
+
+  /// Restricts to listings whose seller offers delivery.
+  final bool deliveryOnly;
+
+  /// Restricts to listings with at least one photo.
+  ///
+  /// Backed by the stored `image_count`, since Firestore cannot ask
+  /// whether an array is non-empty but can ask whether a number exceeds
+  /// zero.
+  final bool withPhotosOnly;
+
+  /// Restricts to listings posted on or after this moment.
+  final DateTime? postedAfter;
 
   /// Ordering applied to the result set.
   final ListingSort sort;
@@ -176,6 +209,7 @@ class ListingQuery {
     String? brand,
     Map<String, String>? attributes,
     Map<String, ({num? min, num? max})>? attributeRanges,
+    Map<String, Set<String>>? attributeSets,
     double? minPrice,
     double? maxPrice,
     ListingCurrency? currency,
@@ -183,6 +217,11 @@ class ListingQuery {
     String? sellerId,
     bool? negotiableOnly,
     bool? promotedOnly,
+    SellerType? sellerType,
+    bool? verifiedSellersOnly,
+    bool? deliveryOnly,
+    bool? withPhotosOnly,
+    DateTime? postedAfter,
     ListingSort? sort,
     int? limit,
     ListingCursor? startAfter,
@@ -198,6 +237,7 @@ class ListingQuery {
       brand: brand ?? this.brand,
       attributes: attributes ?? this.attributes,
       attributeRanges: attributeRanges ?? this.attributeRanges,
+      attributeSets: attributeSets ?? this.attributeSets,
       minPrice: minPrice ?? this.minPrice,
       maxPrice: maxPrice ?? this.maxPrice,
       currency: currency ?? this.currency,
@@ -205,6 +245,11 @@ class ListingQuery {
       sellerId: sellerId ?? this.sellerId,
       negotiableOnly: negotiableOnly ?? this.negotiableOnly,
       promotedOnly: promotedOnly ?? this.promotedOnly,
+      sellerType: sellerType ?? this.sellerType,
+      verifiedSellersOnly: verifiedSellersOnly ?? this.verifiedSellersOnly,
+      deliveryOnly: deliveryOnly ?? this.deliveryOnly,
+      withPhotosOnly: withPhotosOnly ?? this.withPhotosOnly,
+      postedAfter: postedAfter ?? this.postedAfter,
       sort: sort ?? this.sort,
       limit: limit ?? this.limit,
       startAfter: resetCursor ? null : startAfter ?? this.startAfter,
@@ -223,6 +268,7 @@ class ListingQuery {
         other.brand == brand &&
         mapEquals(other.attributes, attributes) &&
         mapEquals(other.attributeRanges, attributeRanges) &&
+        mapEquals(other.attributeSets, attributeSets) &&
         other.minPrice == minPrice &&
         other.maxPrice == maxPrice &&
         other.currency == currency &&
@@ -230,6 +276,11 @@ class ListingQuery {
         other.sellerId == sellerId &&
         other.negotiableOnly == negotiableOnly &&
         other.promotedOnly == promotedOnly &&
+        other.sellerType == sellerType &&
+        other.verifiedSellersOnly == verifiedSellersOnly &&
+        other.deliveryOnly == deliveryOnly &&
+        other.withPhotosOnly == withPhotosOnly &&
+        other.postedAfter == postedAfter &&
         other.sort == sort &&
         other.limit == limit &&
         other.startAfter == startAfter;
@@ -237,6 +288,8 @@ class ListingQuery {
 
   @override
   int get hashCode {
+    // Object.hash takes at most twenty arguments and this query carries
+    // more, so the tail is folded into a nested hash rather than dropped.
     return Object.hash(
       category,
       subcategory,
@@ -247,6 +300,7 @@ class ListingQuery {
       brand,
       Object.hashAll(attributes.entries.map((e) => '${e.key}=${e.value}')),
       Object.hashAll(attributeRanges.keys),
+      Object.hashAll(attributeSets.keys),
       minPrice,
       maxPrice,
       currency,
@@ -256,7 +310,14 @@ class ListingQuery {
       promotedOnly,
       sort,
       limit,
-      startAfter,
+      Object.hash(
+        sellerType,
+        verifiedSellersOnly,
+        deliveryOnly,
+        withPhotosOnly,
+        postedAfter,
+        startAfter,
+      ),
     );
   }
 }

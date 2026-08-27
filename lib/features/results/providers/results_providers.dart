@@ -5,6 +5,37 @@ import 'package:tebiyu/core/models/listing.dart';
 import 'package:tebiyu/core/repositories/listing_repository.dart';
 import 'package:tebiyu/core/repositories/listing_repository_provider.dart';
 
+/// How recently a listing was posted.
+enum DatePosted {
+  /// No restriction.
+  anytime('Anytime'),
+
+  /// Posted today.
+  today('Today'),
+
+  /// Posted in the last seven days.
+  week('Last 7 days'),
+
+  /// Posted in the last thirty days.
+  month('Last 30 days');
+
+  const DatePosted(this.label);
+
+  /// Label shown in the filter sheet.
+  final String label;
+
+  /// The earliest creation time this option allows, or null for anytime.
+  DateTime? get since {
+    final now = DateTime.now();
+    return switch (this) {
+      DatePosted.anytime => null,
+      DatePosted.today => DateTime(now.year, now.month, now.day),
+      DatePosted.week => now.subtract(const Duration(days: 7)),
+      DatePosted.month => now.subtract(const Duration(days: 30)),
+    };
+  }
+}
+
 /// What a results screen is showing, before user filters are applied.
 ///
 /// Comes from the route, so it is the one part of the query the user cannot
@@ -52,6 +83,12 @@ class ResultsFilters {
     this.negotiableOnly = false,
     this.attributes = const <String, String>{},
     this.attributeRanges = const <String, ({num? min, num? max})>{},
+    this.attributeSets = const <String, Set<String>>{},
+    this.sellerType,
+    this.verifiedOnly = false,
+    this.deliveryOnly = false,
+    this.withPhotosOnly = false,
+    this.datePosted = DatePosted.anytime,
     this.sort = ListingSort.latest,
   });
 
@@ -76,6 +113,24 @@ class ResultsFilters {
   /// Numeric attribute bounds, keyed by attribute name.
   final Map<String, ({num? min, num? max})> attributeRanges;
 
+  /// Multi-select attribute selections, keyed by attribute name.
+  final Map<String, Set<String>> attributeSets;
+
+  /// Individual or business sellers only.
+  final SellerType? sellerType;
+
+  /// Verified sellers only.
+  final bool verifiedOnly;
+
+  /// Sellers offering delivery only.
+  final bool deliveryOnly;
+
+  /// Listings with at least one photo only.
+  final bool withPhotosOnly;
+
+  /// How recently the listing was posted.
+  final DatePosted datePosted;
+
   /// Result ordering.
   final ListingSort sort;
 
@@ -89,7 +144,14 @@ class ResultsFilters {
     if (conditions.isNotEmpty) count++;
     if (minPrice != null || maxPrice != null) count++;
     if (negotiableOnly) count++;
-    return count + attributes.length + attributeRanges.length;
+    if (sellerType != null || verifiedOnly) count++;
+    if (deliveryOnly) count++;
+    if (withPhotosOnly) count++;
+    if (datePosted != DatePosted.anytime) count++;
+    return count +
+        attributes.length +
+        attributeRanges.length +
+        attributeSets.length;
   }
 
   /// Whether [definition] currently has a value.
@@ -99,10 +161,15 @@ class ResultsFilters {
       FilterTarget.price => minPrice != null || maxPrice != null,
       FilterTarget.condition => conditions.isNotEmpty,
       FilterTarget.negotiable => negotiableOnly,
+      FilterTarget.delivery => deliveryOnly,
+      FilterTarget.hasPhotos => withPhotosOnly,
+      FilterTarget.sellerType => sellerType != null || verifiedOnly,
+      FilterTarget.datePosted => datePosted != DatePosted.anytime,
       FilterTarget.attribute => attributes.containsKey(
             definition.attributeKey,
           ) ||
-          attributeRanges.containsKey(definition.attributeKey),
+          attributeRanges.containsKey(definition.attributeKey) ||
+          attributeSets.containsKey(definition.attributeKey),
     };
   }
 
@@ -118,9 +185,16 @@ class ResultsFilters {
     bool? negotiableOnly,
     Map<String, String>? attributes,
     Map<String, ({num? min, num? max})>? attributeRanges,
+    Map<String, Set<String>>? attributeSets,
+    SellerType? sellerType,
+    bool? verifiedOnly,
+    bool? deliveryOnly,
+    bool? withPhotosOnly,
+    DatePosted? datePosted,
     ListingSort? sort,
     bool clearType = false,
     bool clearPrices = false,
+    bool clearSellerType = false,
   }) {
     return ResultsFilters(
       type: clearType ? null : type ?? this.type,
@@ -130,6 +204,12 @@ class ResultsFilters {
       negotiableOnly: negotiableOnly ?? this.negotiableOnly,
       attributes: attributes ?? this.attributes,
       attributeRanges: attributeRanges ?? this.attributeRanges,
+      attributeSets: attributeSets ?? this.attributeSets,
+      sellerType: clearSellerType ? null : sellerType ?? this.sellerType,
+      verifiedOnly: verifiedOnly ?? this.verifiedOnly,
+      deliveryOnly: deliveryOnly ?? this.deliveryOnly,
+      withPhotosOnly: withPhotosOnly ?? this.withPhotosOnly,
+      datePosted: datePosted ?? this.datePosted,
       sort: sort ?? this.sort,
     );
   }
@@ -144,6 +224,12 @@ class ResultsFilters {
       other.negotiableOnly == negotiableOnly &&
       mapEquals(other.attributes, attributes) &&
       mapEquals(other.attributeRanges, attributeRanges) &&
+      mapEquals(other.attributeSets, attributeSets) &&
+      other.sellerType == sellerType &&
+      other.verifiedOnly == verifiedOnly &&
+      other.deliveryOnly == deliveryOnly &&
+      other.withPhotosOnly == withPhotosOnly &&
+      other.datePosted == datePosted &&
       other.sort == sort;
 
   @override
@@ -155,6 +241,12 @@ class ResultsFilters {
         negotiableOnly,
         Object.hashAll(attributes.entries.map((e) => '${e.key}=${e.value}')),
         Object.hashAll(attributeRanges.keys),
+        Object.hashAll(attributeSets.keys),
+        sellerType,
+        verifiedOnly,
+        deliveryOnly,
+        withPhotosOnly,
+        datePosted,
         sort,
       );
 }
@@ -316,6 +408,12 @@ class ResultsNotifier
             negotiableOnly: filters.negotiableOnly,
             attributes: filters.attributes,
             attributeRanges: filters.attributeRanges,
+            attributeSets: filters.attributeSets,
+            sellerType: filters.sellerType,
+            verifiedSellersOnly: filters.verifiedOnly,
+            deliveryOnly: filters.deliveryOnly,
+            withPhotosOnly: filters.withPhotosOnly,
+            postedAfter: filters.datePosted.since,
             sort: filters.sort,
             startAfter: startAfter,
           ),

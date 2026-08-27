@@ -194,6 +194,18 @@ class _ResultsFilterSheetState extends ConsumerState<ResultsFilterSheet> {
     );
   }
 
+  Widget _toggle(String label, bool value, ValueChanged<bool> onChanged) {
+    return SwitchListTile.adaptive(
+      value: value,
+      contentPadding: EdgeInsets.zero,
+      onChanged: (next) => setState(() => onChanged(next)),
+      title: Text(
+        label,
+        style: AppTextStyles.body.copyWith(color: context.colors.primaryText),
+      ),
+    );
+  }
+
   Widget _editorFor(FilterDefinition definition) {
     switch (definition.target) {
       case FilterTarget.offerType:
@@ -232,19 +244,73 @@ class _ResultsFilterSheetState extends ConsumerState<ResultsFilterSheet> {
           ],
         );
 
+      case FilterTarget.delivery:
+        return _toggle(
+          'Delivery available',
+          _draft.deliveryOnly,
+          (value) => _draft = _draft.copyWith(deliveryOnly: value),
+        );
+
+      case FilterTarget.hasPhotos:
+        return _toggle(
+          'Only listings with photos',
+          _draft.withPhotosOnly,
+          (value) => _draft = _draft.copyWith(withPhotosOnly: value),
+        );
+
+      case FilterTarget.sellerType:
+        // Verified is not a third kind of seller, it is a badge either kind
+        // can hold. Offered as one list because a buyer thinks of it as one
+        // question, and resolved back into two fields on selection.
+        final selected = _draft.verifiedOnly
+            ? 'Verified seller'
+            : _draft.sellerType?.label ?? 'Anyone';
+        return _Choices(
+          labels: <String>[
+            'Anyone',
+            for (final type in SellerType.values) type.label,
+            'Verified seller',
+          ],
+          selected: selected,
+          onSelected: (label) => setState(() {
+            switch (label) {
+              case 'Anyone':
+                _draft = _draft
+                    .copyWith(clearSellerType: true)
+                    .copyWith(verifiedOnly: false);
+              case 'Verified seller':
+                _draft = _draft
+                    .copyWith(clearSellerType: true)
+                    .copyWith(verifiedOnly: true);
+              default:
+                _draft = _draft.copyWith(
+                  verifiedOnly: false,
+                  sellerType: SellerType.values.firstWhere(
+                    (type) => type.label == label,
+                  ),
+                );
+            }
+          }),
+        );
+
+      case FilterTarget.datePosted:
+        return _Choices(
+          labels: <String>[for (final v in DatePosted.values) v.label],
+          selected: _draft.datePosted.label,
+          onSelected: (label) => setState(() {
+            _draft = _draft.copyWith(
+              datePosted: DatePosted.values.firstWhere(
+                (v) => v.label == label,
+              ),
+            );
+          }),
+        );
+
       case FilterTarget.negotiable:
-        return SwitchListTile.adaptive(
-          value: _draft.negotiableOnly,
-          contentPadding: EdgeInsets.zero,
-          onChanged: (value) => setState(
-            () => _draft = _draft.copyWith(negotiableOnly: value),
-          ),
-          title: Text(
-            'Negotiable only',
-            style: AppTextStyles.body.copyWith(
-              color: context.colors.primaryText,
-            ),
-          ),
+        return _toggle(
+          'Negotiable only',
+          _draft.negotiableOnly,
+          (value) => _draft = _draft.copyWith(negotiableOnly: value),
         );
 
       case FilterTarget.price:
@@ -277,11 +343,57 @@ class _ResultsFilterSheetState extends ConsumerState<ResultsFilterSheet> {
               '$key.max',
               range?.max?.toString() ?? '',
             ),
-            hint: definition.unit == null
-                ? null
-                : 'Values in ${definition.unit}.',
+            // The label carries its own unit where one applies, for
+            // example "Mileage (km)", so no extra hint is needed here.
+           
           );
         }
+        if (definition.input == FilterInput.multiChoice) {
+          final held = _draft.attributeSets[key] ?? const <String>{};
+          return Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: <Widget>[
+              for (final option in definition.options)
+                _Chip(
+                  label: option,
+                  selected: held.contains(option),
+                  onTap: () => setState(() {
+                    final next = Map<String, Set<String>>.of(
+                      _draft.attributeSets,
+                    );
+                    final values = Set<String>.of(
+                      next[key] ?? const <String>{},
+                    );
+                    if (!values.remove(option)) values.add(option);
+                    if (values.isEmpty) {
+                      next.remove(key);
+                    } else {
+                      next[key] = values;
+                    }
+                    _draft = _draft.copyWith(attributeSets: next);
+                  }),
+                ),
+            ],
+          );
+        }
+
+        if (definition.input == FilterInput.flag) {
+          return _toggle(
+            definition.label,
+            _draft.attributes[key] == 'Yes',
+            (value) {
+              final next = Map<String, String>.of(_draft.attributes);
+              if (value) {
+                next[key] = 'Yes';
+              } else {
+                next.remove(key);
+              }
+              _draft = _draft.copyWith(attributes: next);
+            },
+          );
+        }
+
         return Wrap(
           spacing: AppSpacing.sm,
           runSpacing: AppSpacing.sm,

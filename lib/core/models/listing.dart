@@ -36,7 +36,10 @@ enum ListingType {
   /// buried in a description: vehicle hire and property rental are a large
   /// share of the market, and a buyer filtering for a car to own does not
   /// want rentals mixed into the results.
-  hire('hire', 'For hire');
+  hire('hire', 'For rent'),
+
+  /// Held under a long term lease, mostly commercial property.
+  lease('lease', 'For lease');
 
   const ListingType(this.storageKey, this.label);
 
@@ -67,7 +70,10 @@ enum ListingCondition {
   foreignUsed('foreign_used', 'Foreign used'),
 
   /// Repaired or restored to working order.
-  refurbished('refurbished', 'Refurbished');
+  refurbished('refurbished', 'Refurbished'),
+
+  /// Not working, sold for salvage or spares.
+  forParts('for_parts', 'For parts');
 
   const ListingCondition(this.storageKey, this.label);
 
@@ -82,6 +88,31 @@ enum ListingCondition {
     return ListingCondition.values.firstWhere(
       (condition) => condition.storageKey == value,
       orElse: () => ListingCondition.used,
+    );
+  }
+}
+
+/// Who is selling.
+enum SellerType {
+  /// A private individual selling their own belongings.
+  individual('individual', 'Individual'),
+
+  /// A shop, dealer or registered trader.
+  business('business', 'Business');
+
+  const SellerType(this.storageKey, this.label);
+
+  /// Value persisted to Firestore and Hive.
+  final String storageKey;
+
+  /// Human readable label.
+  final String label;
+
+  /// Resolves a stored value back to an enum, defaulting to [individual].
+  static SellerType fromStorage(Object? value) {
+    return SellerType.values.firstWhere(
+      (type) => type.storageKey == value,
+      orElse: () => SellerType.individual,
     );
   }
 }
@@ -157,6 +188,8 @@ class Listing {
     this.longitude,
     this.sellerAvatarUrl,
     this.sellerVerified = false,
+    this.sellerType = SellerType.individual,
+    this.deliveryAvailable = false,
     this.attributes = const <String, String>{},
     this.status = ListingStatus.active,
     this.views = 0,
@@ -195,6 +228,8 @@ class Listing {
       longitude: (map['longitude'] as num?)?.toDouble(),
       sellerAvatarUrl: map['seller_avatar_url'] as String?,
       sellerVerified: map['seller_verified'] as bool? ?? false,
+      sellerType: SellerType.fromStorage(map['seller_type']),
+      deliveryAvailable: map['delivery_available'] as bool? ?? false,
       attributes: (map['attributes'] as Map<dynamic, dynamic>? ?? {})
           .map((key, value) => MapEntry('$key', '$value')),
       status: ListingStatus.fromStorage(map['status']),
@@ -278,6 +313,19 @@ class Listing {
   /// Denormalized seller verification flag.
   final bool sellerVerified;
 
+  /// Denormalized seller kind, individual or business.
+  final SellerType sellerType;
+
+  /// Whether the seller will deliver the item.
+  final bool deliveryAvailable;
+
+  /// Whether the listing has at least one photo.
+  ///
+  /// Derived rather than stored. Firestore cannot filter on "list is not
+  /// empty", so the query layer uses a stored image count instead; this
+  /// getter is for the UI.
+  bool get hasPhotos => images.isNotEmpty;
+
   /// Category specific fields, for example `{'Brand': 'Toyota'}`.
   ///
   /// Firestore can query these directly with `attributes.Brand`, which is
@@ -349,6 +397,11 @@ class Listing {
       'seller_name': sellerName,
       'seller_avatar_url': sellerAvatarUrl,
       'seller_verified': sellerVerified,
+      'seller_type': sellerType.storageKey,
+      'delivery_available': deliveryAvailable,
+      // Stored so Firestore can filter on it. A query cannot ask whether an
+      // array is non-empty, but it can ask whether a number is above zero.
+      'image_count': images.length,
       'attributes': attributes,
       'status': status.storageKey,
       'views': views,
@@ -385,6 +438,8 @@ class Listing {
     String? sellerName,
     String? sellerAvatarUrl,
     bool? sellerVerified,
+    SellerType? sellerType,
+    bool? deliveryAvailable,
     Map<String, String>? attributes,
     ListingStatus? status,
     int? views,
@@ -418,6 +473,8 @@ class Listing {
       sellerName: sellerName ?? this.sellerName,
       sellerAvatarUrl: sellerAvatarUrl ?? this.sellerAvatarUrl,
       sellerVerified: sellerVerified ?? this.sellerVerified,
+      sellerType: sellerType ?? this.sellerType,
+      deliveryAvailable: deliveryAvailable ?? this.deliveryAvailable,
       attributes: attributes ?? this.attributes,
       status: status ?? this.status,
       views: views ?? this.views,
@@ -463,6 +520,8 @@ class Listing {
         other.sellerName == sellerName &&
         other.sellerAvatarUrl == sellerAvatarUrl &&
         other.sellerVerified == sellerVerified &&
+        other.sellerType == sellerType &&
+        other.deliveryAvailable == deliveryAvailable &&
         mapEquals(other.attributes, attributes) &&
         other.status == status &&
         other.views == views &&

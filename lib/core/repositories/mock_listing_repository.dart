@@ -150,6 +150,13 @@ class MockListingRepository implements ListingRepository {
         if (listing.attributes[entry.key] != entry.value) return false;
       }
 
+      for (final entry in query.attributeSets.entries) {
+        final raw = listing.attributes[entry.key];
+        if (raw == null) return false;
+        final held = raw.split(',').map((v) => v.trim()).toSet();
+        if (!held.containsAll(entry.value)) return false;
+      }
+
       for (final entry in query.attributeRanges.entries) {
         final raw = listing.attributes[entry.key];
         // Attribute values are stored as strings, so a numeric filter has
@@ -174,6 +181,16 @@ class MockListingRepository implements ListingRepository {
         return false;
       }
       if (query.negotiableOnly && !listing.negotiable) return false;
+      if (query.sellerType != null && listing.sellerType != query.sellerType) {
+        return false;
+      }
+      if (query.verifiedSellersOnly && !listing.sellerVerified) return false;
+      if (query.deliveryOnly && !listing.deliveryAvailable) return false;
+      if (query.withPhotosOnly && !listing.hasPhotos) return false;
+      if (query.postedAfter != null &&
+          listing.createdAt.isBefore(query.postedAfter!)) {
+        return false;
+      }
       if (query.promotedOnly && !listing.isPromotedNow) return false;
       if (term != null && term.isNotEmpty) {
         final haystack =
