@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tebiyu/core/repositories/listing_repository.dart';
+import 'package:tebiyu/core/router/routes.dart';
 import 'package:tebiyu/core/theme/app_colors.dart';
 import 'package:tebiyu/core/theme/app_radius.dart';
 import 'package:tebiyu/core/theme/app_shadows.dart';
@@ -73,8 +75,11 @@ class HomeScreen extends ConsumerWidget {
               const SliverToBoxAdapter(child: AppSpacing.gapLg),
               const SliverToBoxAdapter(child: PromoBanner()),
               const SliverToBoxAdapter(child: AppSpacing.gapXl),
-              const SliverToBoxAdapter(
-                child: _SectionHeader(title: 'Browse categories'),
+              SliverToBoxAdapter(
+                child: _SectionHeader(
+                  title: 'Browse categories',
+                  onViewAll: () => context.push(Routes.categories),
+                ),
               ),
               const SliverToBoxAdapter(child: CategoryRow()),
               const SliverToBoxAdapter(child: AppSpacing.gapXl),
@@ -109,9 +114,12 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+  const _SectionHeader({required this.title, this.onViewAll});
 
   final String title;
+
+  /// Opens the full list. Omitted when there is nothing further to show.
+  final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
@@ -131,6 +139,11 @@ class _SectionHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (onViewAll != null)
+            TextButton(
+              onPressed: onViewAll,
+              child: const Text('View all'),
+            ),
         ],
       ),
     );
@@ -408,11 +421,8 @@ class _CardSkeletonState extends State<_CardSkeleton>
     );
   }
 
-  Widget _bar(
-    Color color, {
-    required double widthFactor,
-    required double height,
-  }) {
+  Widget _bar(Color color, {required double widthFactor, required double
+      height}) {
     return FractionallySizedBox(
       alignment: AlignmentDirectional.centerStart,
       widthFactor: widthFactor,

@@ -139,6 +139,15 @@ class _SidebarTile extends StatelessWidget {
 class _SubcategoryGrid extends ConsumerWidget {
   const _SubcategoryGrid({required this.category});
 
+  /// Tile width the grid aims for before adding another column.
+  static const double _targetTileWidth = 180;
+
+  /// Line height of a subcategory name, from `bodySmall` at weight 600.
+  static const double _nameHeight = 13 * 1.45;
+
+  /// Line height of the count line, from `caption`.
+  static const double _countHeight = 11 * 1.4;
+
   final TebiyuCategory category;
 
   @override
@@ -149,30 +158,36 @@ class _SubcategoryGrid extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 520 ? 4 : 3;
-        final cellWidth = (constraints.maxWidth -
-                AppSpacing.md * 2 -
-                AppSpacing.md * (columns - 1)) /
-            columns;
+        // Columns follow a target tile width rather than a breakpoint. A
+        // fixed count has no upper bound, so on a wide window four columns
+        // means 320px tiles: the artwork stretches to fill whatever space
+        // exists and the gutters look tight by comparison.
+        final available = constraints.maxWidth - AppSpacing.lg * 2;
+        final columns =
+            (available / _targetTileWidth).ceil().clamp(3, 8);
+        final cellWidth =
+            (available - AppSpacing.lg * (columns - 1)) / columns;
 
         // Square image, then two lines of name and one of count.
-        final extent =
-            cellWidth + scaler.scale(11 * 1.4 * 3) + AppSpacing.xs;
+        final extent = cellWidth +
+            scaler.scale(_nameHeight * 2 + _countHeight) +
+            AppSpacing.sm;
 
         return ColoredBox(
           color: colors.primaryBackground,
           child: GridView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: columns,
-              crossAxisSpacing: AppSpacing.md,
-              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.lg,
+              mainAxisSpacing: AppSpacing.xl,
               mainAxisExtent: extent,
             ),
             itemCount: category.subcategories.length,
             itemBuilder: (context, index) {
               final subcategory = category.subcategories[index];
               return _SubcategoryTile(
+                imagePath: category.subImagePath(subcategory),
                 subcategory: subcategory,
                 count: counts.valueOrNull?[subcategory.name] ?? 0,
                 imageSize: cellWidth,
@@ -187,10 +202,14 @@ class _SubcategoryGrid extends ConsumerWidget {
 
 class _SubcategoryTile extends StatelessWidget {
   const _SubcategoryTile({
+    required this.imagePath,
     required this.subcategory,
     required this.count,
     required this.imageSize,
   });
+
+  /// Artwork path, built by the parent category.
+  final String imagePath;
 
   final TebiyuSubcategory subcategory;
 
@@ -225,20 +244,21 @@ class _SubcategoryTile extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: AppRadius.allSm,
                   child: CategoryImage(
-                    path: subcategory.imagePath,
+                    path: imagePath,
                     renderSize: imageSize,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               subcategory.name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(
+              style: AppTextStyles.bodySmall.copyWith(
                 color: colors.primaryText,
+                fontWeight: FontWeight.w600,
               ),
             ),
             if (count > 0)

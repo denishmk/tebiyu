@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tebiyu/core/constants/app_assets.dart';
 import 'package:tebiyu/core/router/routes.dart';
+import 'package:tebiyu/core/services/preferences_service.dart';
 import 'package:tebiyu/core/theme/theme.dart';
 
 /// Tebiyu's splash screen.
@@ -103,7 +104,8 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   // P1.4 replaces this with a shared_preferences read.
-  Future<bool> _readOnboardingFlag() async => false;
+  Future<bool> _readOnboardingFlag() => 
+  PreferencesService.hasCompletedOnboarding();
 
   @override
   Widget build(BuildContext context) {
@@ -178,9 +180,12 @@ class _SplashScreenState extends State<SplashScreen>
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: Image.asset(
-            AppAssets.logo,
-            width: logoWidth,
+            child: Image.asset(
+              AppAssets.logo,
+              width: logoWidth,
+              errorBuilder: (context, error, stack) => Text('Tebiyu',
+              style: AppTextStyles.h2.copyWith(color: Colors.white),
+            ),
           ),
         ),
       ),
