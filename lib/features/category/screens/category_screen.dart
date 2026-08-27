@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tebiyu/core/constants/categories.dart';
+import 'package:tebiyu/core/router/routes.dart';
 import 'package:tebiyu/core/theme/app_colors.dart';
 import 'package:tebiyu/core/theme/app_radius.dart';
 import 'package:tebiyu/core/theme/app_shadows.dart';
@@ -187,6 +189,7 @@ class _SubcategoryGrid extends ConsumerWidget {
             itemBuilder: (context, index) {
               final subcategory = category.subcategories[index];
               return _SubcategoryTile(
+                categoryName: category.name,
                 imagePath: category.subImagePath(subcategory),
                 subcategory: subcategory,
                 count: counts.valueOrNull?[subcategory.name] ?? 0,
@@ -202,11 +205,15 @@ class _SubcategoryGrid extends ConsumerWidget {
 
 class _SubcategoryTile extends StatelessWidget {
   const _SubcategoryTile({
+    required this.categoryName,
     required this.imagePath,
     required this.subcategory,
     required this.count,
     required this.imageSize,
   });
+
+  /// Owning category, passed to the results screen.
+  final String categoryName;
 
   /// Artwork path, built by the parent category.
   final String imagePath;
@@ -232,8 +239,12 @@ class _SubcategoryTile extends StatelessWidget {
       borderRadius: AppRadius.allSm,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        // Opens the filtered results screen in P2.3.
-        onTap: () {},
+        onTap: () => context.push(
+          Routes.resultsFor(
+            category: categoryName,
+            subcategory: subcategory.name,
+          ),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[

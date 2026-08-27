@@ -25,6 +25,36 @@ enum ListingCurrency {
   }
 }
 
+/// Whether a listing is offered for sale or for hire.
+enum ListingType {
+  /// Ownership transfers to the buyer.
+  sale('sale', 'For sale'),
+
+  /// Rented or hired for a period, then returned.
+  ///
+  /// Common enough here to be a first class field rather than something
+  /// buried in a description: vehicle hire and property rental are a large
+  /// share of the market, and a buyer filtering for a car to own does not
+  /// want rentals mixed into the results.
+  hire('hire', 'For hire');
+
+  const ListingType(this.storageKey, this.label);
+
+  /// Value persisted to Firestore and Hive.
+  final String storageKey;
+
+  /// Human readable label.
+  final String label;
+
+  /// Resolves a stored value back to an enum, defaulting to [sale].
+  static ListingType fromStorage(Object? value) {
+    return ListingType.values.firstWhere(
+      (type) => type.storageKey == value,
+      orElse: () => ListingType.sale,
+    );
+  }
+}
+
 /// Physical condition of the item being sold.
 enum ListingCondition {
   /// Never used, still sealed or unopened.
@@ -118,6 +148,7 @@ class Listing {
     required this.sellerId,
     required this.sellerName,
     required this.createdAt,
+    this.type = ListingType.sale,
     this.negotiable = false,
     this.exchangePossible = false,
     this.priceUsdAtPost,
@@ -155,6 +186,7 @@ class Listing {
       sellerId: map['seller_id'] as String? ?? '',
       sellerName: map['seller_name'] as String? ?? '',
       createdAt: _dateFrom(map['created_at']) ?? DateTime.now(),
+      type: ListingType.fromStorage(map['type']),
       negotiable: map['negotiable'] as bool? ?? false,
       exchangePossible: map['exchange_possible'] as bool? ?? false,
       priceUsdAtPost: (map['price_usd_at_post'] as num?)?.toDouble(),
@@ -163,9 +195,8 @@ class Listing {
       longitude: (map['longitude'] as num?)?.toDouble(),
       sellerAvatarUrl: map['seller_avatar_url'] as String?,
       sellerVerified: map['seller_verified'] as bool? ?? false,
-      attributes: (map['attributes'] as Map<dynamic, dynamic>? ?? {}).map(
-        (key, value) => MapEntry('$key', '$value'),
-      ),
+      attributes: (map['attributes'] as Map<dynamic, dynamic>? ?? {})
+          .map((key, value) => MapEntry('$key', '$value')),
       status: ListingStatus.fromStorage(map['status']),
       views: (map['views'] as num?)?.toInt() ?? 0,
       saves: (map['saves'] as num?)?.toInt() ?? 0,
@@ -204,6 +235,9 @@ class Listing {
   /// keeps historical listings comparable and gives analytics a stable
   /// basis. Null for listings already priced in USD.
   final double? priceUsdAtPost;
+
+  /// Whether the item is for sale or for hire.
+  final ListingType type;
 
   /// Whether the seller will entertain offers.
   final bool negotiable;
@@ -245,7 +279,14 @@ class Listing {
   final bool sellerVerified;
 
   /// Category specific fields, for example `{'Brand': 'Toyota'}`.
+  ///
+  /// Firestore can query these directly with `attributes.Brand`, which is
+  /// what brand filtering uses. Keys are free-form, so a typo by one seller
+  /// creates a value nobody will ever filter to.
   final Map<String, String> attributes;
+
+  /// The brand recorded in [attributes], if any.
+  String? get brand => attributes['Brand'];
 
   /// Lifecycle state.
   final ListingStatus status;
@@ -294,6 +335,7 @@ class Listing {
       'price': price,
       'currency': currency.storageKey,
       'price_usd_at_post': priceUsdAtPost,
+      'type': type.storageKey,
       'negotiable': negotiable,
       'exchange_possible': exchangePossible,
       'condition': condition.storageKey,
@@ -329,6 +371,7 @@ class Listing {
     double? price,
     ListingCurrency? currency,
     double? priceUsdAtPost,
+    ListingType? type,
     bool? negotiable,
     bool? exchangePossible,
     ListingCondition? condition,
@@ -361,6 +404,7 @@ class Listing {
       price: price ?? this.price,
       currency: currency ?? this.currency,
       priceUsdAtPost: priceUsdAtPost ?? this.priceUsdAtPost,
+      type: type ?? this.type,
       negotiable: negotiable ?? this.negotiable,
       exchangePossible: exchangePossible ?? this.exchangePossible,
       condition: condition ?? this.condition,
@@ -405,6 +449,7 @@ class Listing {
         other.price == price &&
         other.currency == currency &&
         other.priceUsdAtPost == priceUsdAtPost &&
+        other.type == type &&
         other.negotiable == negotiable &&
         other.exchangePossible == exchangePossible &&
         other.condition == condition &&

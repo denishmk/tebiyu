@@ -80,6 +80,10 @@ class ListingQuery {
     this.city,
     this.area,
     this.conditions = const <ListingCondition>{},
+    this.type,
+    this.brand,
+    this.attributes = const <String, String>{},
+    this.attributeRanges = const <String, ({num? min, num? max})>{},
     this.minPrice,
     this.maxPrice,
     this.currency,
@@ -106,6 +110,27 @@ class ListingQuery {
 
   /// Restricts to the given conditions. Empty means no restriction.
   final Set<ListingCondition> conditions;
+
+  /// Restricts to sale or hire listings. Null means both.
+  final ListingType? type;
+
+  /// Restricts to one brand, matched against `attributes.Brand`.
+  final String? brand;
+
+  /// Exact attribute matches, for example `{'Transmission': 'Automatic'}`.
+  ///
+  /// Firestore queries these as `attributes.Transmission`. Each filterable
+  /// attribute combined with a sort order needs its own composite index,
+  /// and a database allows 200 of them, so the schema marks only a handful
+  /// per subcategory as filterable rather than every field a seller fills.
+  ///
+  /// A listing whose seller left the field blank matches neither value and
+  /// drops out of the results entirely. That is the correct behaviour, and
+  /// a reason to only filter on fields sellers reliably complete.
+  final Map<String, String> attributes;
+
+  /// Numeric attribute bounds, for example `{'Year': (min: 2015, max: null)}`.
+  final Map<String, ({num? min, num? max})> attributeRanges;
 
   /// Lower price bound, inclusive.
   final double? minPrice;
@@ -147,6 +172,10 @@ class ListingQuery {
     String? city,
     String? area,
     Set<ListingCondition>? conditions,
+    ListingType? type,
+    String? brand,
+    Map<String, String>? attributes,
+    Map<String, ({num? min, num? max})>? attributeRanges,
     double? minPrice,
     double? maxPrice,
     ListingCurrency? currency,
@@ -165,6 +194,10 @@ class ListingQuery {
       city: city ?? this.city,
       area: area ?? this.area,
       conditions: conditions ?? this.conditions,
+      type: type ?? this.type,
+      brand: brand ?? this.brand,
+      attributes: attributes ?? this.attributes,
+      attributeRanges: attributeRanges ?? this.attributeRanges,
       minPrice: minPrice ?? this.minPrice,
       maxPrice: maxPrice ?? this.maxPrice,
       currency: currency ?? this.currency,
@@ -186,6 +219,10 @@ class ListingQuery {
         other.city == city &&
         other.area == area &&
         setEquals(other.conditions, conditions) &&
+        other.type == type &&
+        other.brand == brand &&
+        mapEquals(other.attributes, attributes) &&
+        mapEquals(other.attributeRanges, attributeRanges) &&
         other.minPrice == minPrice &&
         other.maxPrice == maxPrice &&
         other.currency == currency &&
@@ -206,6 +243,10 @@ class ListingQuery {
       city,
       area,
       Object.hashAll(conditions),
+      type,
+      brand,
+      Object.hashAll(attributes.entries.map((e) => '${e.key}=${e.value}')),
+      Object.hashAll(attributeRanges.keys),
       minPrice,
       maxPrice,
       currency,
@@ -224,7 +265,11 @@ class ListingQuery {
 @immutable
 class ListingPage {
   /// Creates a page.
-  const ListingPage({required this.items, this.nextCursor});
+  const ListingPage({
+    required this.items,
+    this.nextCursor,
+    this.totalCount,
+  });
 
   /// An empty page with no further results.
   static const ListingPage empty = ListingPage(items: <Listing>[]);
@@ -235,6 +280,14 @@ class ListingPage {
   /// Cursor for the following page, null when the feed is exhausted.
   final ListingCursor? nextCursor;
 
+  /// Total listings matching the query, across every page.
+  ///
+  /// Null when the backend cannot say cheaply. Firestore's `count()`
+  /// aggregation answers this for a single filtered query without reading
+  /// the documents, which is affordable here in a way it was not for the
+  /// hundred-odd subcategory counts.
+  final int? totalCount;
+
   /// Whether another page is available.
   bool get hasMore => nextCursor != null;
 
@@ -242,11 +295,13 @@ class ListingPage {
   bool operator ==(Object other) {
     return other is ListingPage &&
         listEquals(other.items, items) &&
-        other.nextCursor == nextCursor;
+        other.nextCursor == nextCursor &&
+        other.totalCount == totalCount;
   }
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(items), nextCursor);
+  int get hashCode =>
+      Object.hash(Object.hashAll(items), nextCursor, totalCount);
 }
 
 /// Where a feed's contents came from.

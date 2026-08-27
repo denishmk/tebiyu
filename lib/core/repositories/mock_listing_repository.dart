@@ -143,6 +143,24 @@ class MockListingRepository implements ListingRepository {
           !query.conditions.contains(listing.condition)) {
         return false;
       }
+      if (query.type != null && listing.type != query.type) return false;
+      if (query.brand != null && listing.brand != query.brand) return false;
+
+      for (final entry in query.attributes.entries) {
+        if (listing.attributes[entry.key] != entry.value) return false;
+      }
+
+      for (final entry in query.attributeRanges.entries) {
+        final raw = listing.attributes[entry.key];
+        // Attribute values are stored as strings, so a numeric filter has
+        // to parse them. Anything unparseable is treated as not matching
+        // rather than as zero, which would drop odd entries to the bottom
+        // of a price sort instead of out of the results.
+        final value = raw == null ? null : num.tryParse(_digitsOf(raw));
+        if (value == null) return false;
+        if (entry.value.min != null && value < entry.value.min!) return false;
+        if (entry.value.max != null && value > entry.value.max!) return false;
+      }
       if (query.minPrice != null && listing.price < query.minPrice!) {
         return false;
       }
@@ -189,17 +207,30 @@ class MockListingRepository implements ListingRepository {
       final index = sorted.indexWhere((l) => l.id == cursor.id);
       if (index != -1) start = index + 1;
     }
-    if (start >= sorted.length) return ListingPage.empty;
+    if (start >= sorted.length) {
+      return ListingPage(items: const <Listing>[], totalCount: sorted.length);
+    }
 
     final end = (start + query.limit).clamp(0, sorted.length);
     final items = sorted.sublist(start, end);
     final hasMore = end < sorted.length;
     return ListingPage(
       items: items,
+      totalCount: sorted.length,
       nextCursor: hasMore && items.isNotEmpty
           ? ListingCursor.after(items.last, query.sort)
           : null,
     );
+  }
+
+  /// Strips units and separators so `96,000 km` parses as `96000`.
+  static String _digitsOf(String value) {
+    final buffer = StringBuffer();
+    for (final unit in value.runes) {
+      final char = String.fromCharCode(unit);
+      if (char == '.' || (char.codeUnitAt(0) ^ 0x30) <= 9) buffer.write(char);
+    }
+    return buffer.toString();
   }
 
   static String _photo(String seed) =>
@@ -342,6 +373,7 @@ class MockListingRepository implements ListingRepository {
       ),
       Listing(
         id: 'lst_005',
+        type: ListingType.hire,
         title: '3 bedroom house for rent, Thongpiny',
         description:
             'Self contained compound, parking for two cars, borehole and '
@@ -550,6 +582,7 @@ class MockListingRepository implements ListingRepository {
       ),
       Listing(
         id: 'lst_012',
+        type: ListingType.hire,
         title: 'Event photography and videography',
         description:
             'Weddings, graduations and corporate events. Full day package '

@@ -94,4 +94,27 @@ abstract final class Routes {
   /// Builds an area picker path for [city].
   static String locationAreasPath(String city) =>
       '/location/${Uri.encodeComponent(city)}';
+
+    /// Filtered listing results.
+  static const String results = '/results';
+
+  /// Builds a results path for a category and optional subcategory.
+  ///
+  /// Values go in the query string rather than the path because they are
+  /// filters, not identity: `/results?category=Vehicles&subcategory=Cars`
+  /// stays a valid URL when either is absent, which a path segment would
+  /// not. Both are percent-encoded, since category names contain spaces
+  /// and ampersands.
+  static String resultsFor({
+    String? category,
+    String? subcategory,
+    String? search,
+  }) {
+        final params = <String, String>{
+      'category': ?category,
+      'subcategory': ?subcategory,
+      'search': ?search,
+    };
+    return Uri(path: results, queryParameters: params).toString();
+  }    
 }

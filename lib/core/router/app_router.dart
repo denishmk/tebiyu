@@ -11,6 +11,8 @@ import 'package:tebiyu/features/home/screens/home_screen.dart';
 import 'package:tebiyu/features/location/screens/area_picker_screen.dart';
 import 'package:tebiyu/features/location/screens/location_picker_screen.dart';
 import 'package:tebiyu/features/onboarding/screens/onboarding_screen.dart';
+import 'package:tebiyu/features/results/providers/results_providers.dart';
+import 'package:tebiyu/features/results/screens/results_screen.dart';
 import 'package:tebiyu/features/shell/screens/app_shell.dart';
 import 'package:tebiyu/features/shell/screens/placeholder_screen.dart';
 import 'package:tebiyu/features/splash/screens/splash_screen.dart';
@@ -66,6 +68,19 @@ final Provider<GoRouter> goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.location,
         builder: (context, state) => const LocationPickerScreen(),
+      ),
+      GoRoute(
+        path: Routes.results,
+        builder: (context, state) {
+          final query = state.uri.queryParameters;
+          return ResultsScreen(
+            scope: ResultsScope(
+              category: query['category'],
+              subcategory: query['subcategory'],
+              searchTerm: query['search'],
+            ),
+          );
+        },
       ),
       GoRoute(
         path: Routes.locationAreas,
