@@ -477,6 +477,14 @@ abstract class ListingRepository {
   /// number shown as a rough guide rather than a promise.
   Future<Map<String, int>> fetchSubcategoryCounts();
 
+  /// Listings a buyer looking at [listing] might also want.
+  ///
+  /// Same subcategory, same city where possible, excluding the listing
+  /// itself. Deliberately simple: a recommendation engine needs behavioural
+  /// data nobody has yet, and "more of the same kind, nearby" is what a
+  /// buyer comparing prices actually wants.
+  Future<List<Listing>> fetchSimilar(Listing listing, {int limit = 6});
+
   /// Fetches a single listing, or null when it no longer exists.
   Future<Listing?> fetchById(String id);
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tebiyu/core/constants/listing_filters.dart';
 import 'package:tebiyu/core/repositories/listing_repository.dart';
+import 'package:tebiyu/core/router/routes.dart';
 import 'package:tebiyu/core/theme/app_colors.dart';
 import 'package:tebiyu/core/theme/app_radius.dart';
 import 'package:tebiyu/core/theme/app_spacing.dart';
@@ -95,6 +97,11 @@ class ResultsScreen extends ConsumerWidget {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) => ListingCard(
                                     listing: value.listings[index],
+                                    onTap: () => context.push(
+                                      Routes.listingPath(
+                                        value.listings[index].id,
+                                      ),
+                                    ),
                                   ),
                                   childCount: value.listings.length,
                                 ),

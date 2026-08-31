@@ -180,6 +180,9 @@ class _RecommendedRail extends StatelessWidget {
             listing: result.listings[index],
             variant: ListingCardVariant.rail,
             width: cardWidth,
+            onTap: () => context.push(
+              Routes.listingPath(result.listings[index].id),
+            ),
           ),
         );
       },
@@ -234,6 +237,9 @@ class _TrendingGrid extends StatelessWidget {
             delegate: SliverChildBuilderDelegate(
               (context, index) => ListingCard(
                 listing: result.listings[index],
+                onTap: () => context.push(
+                  Routes.listingPath(result.listings[index].id),
+                ),
               ),
               childCount: result.listings.length,
             ),

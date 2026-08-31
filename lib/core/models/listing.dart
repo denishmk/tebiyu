@@ -191,6 +191,8 @@ class Listing {
     this.sellerType = SellerType.individual,
     this.deliveryAvailable = false,
     this.attributes = const <String, String>{},
+    this.features = const <String>[],
+    this.contactPhone,
     this.status = ListingStatus.active,
     this.views = 0,
     this.saves = 0,
@@ -232,6 +234,10 @@ class Listing {
       deliveryAvailable: map['delivery_available'] as bool? ?? false,
       attributes: (map['attributes'] as Map<dynamic, dynamic>? ?? {})
           .map((key, value) => MapEntry('$key', '$value')),
+      features: (map['features'] as List<dynamic>? ?? <dynamic>[])
+          .whereType<String>()
+          .toList(),
+      contactPhone: map['contact_phone'] as String?,
       status: ListingStatus.fromStorage(map['status']),
       views: (map['views'] as num?)?.toInt() ?? 0,
       saves: (map['saves'] as num?)?.toInt() ?? 0,
@@ -336,6 +342,21 @@ class Listing {
   /// The brand recorded in [attributes], if any.
   String? get brand => attributes['Brand'];
 
+  /// Extras the seller ticked, shown as chips on the detail screen.
+  ///
+  /// Display only, deliberately. These are long tail conveniences like air
+  /// conditioning or alloy wheels: useful to read, but too numerous and too
+  /// inconsistently applied to filter on. The filter taxonomy leaves them
+  /// out for the same reason.
+  final List<String> features;
+
+  /// Number the Call seller button dials.
+  ///
+  /// Separate from the seller's account phone: a seller may list a shop
+  /// line for one item and a personal number for another, and the listing
+  /// form asks per listing.
+  final String? contactPhone;
+
   /// Lifecycle state.
   final ListingStatus status;
 
@@ -403,6 +424,8 @@ class Listing {
       // array is non-empty, but it can ask whether a number is above zero.
       'image_count': images.length,
       'attributes': attributes,
+      'features': features,
+      'contact_phone': contactPhone,
       'status': status.storageKey,
       'views': views,
       'saves': saves,
@@ -441,6 +464,8 @@ class Listing {
     SellerType? sellerType,
     bool? deliveryAvailable,
     Map<String, String>? attributes,
+    List<String>? features,
+    String? contactPhone,
     ListingStatus? status,
     int? views,
     int? saves,
@@ -476,6 +501,8 @@ class Listing {
       sellerType: sellerType ?? this.sellerType,
       deliveryAvailable: deliveryAvailable ?? this.deliveryAvailable,
       attributes: attributes ?? this.attributes,
+      features: features ?? this.features,
+      contactPhone: contactPhone ?? this.contactPhone,
       status: status ?? this.status,
       views: views ?? this.views,
       saves: saves ?? this.saves,
@@ -523,6 +550,8 @@ class Listing {
         other.sellerType == sellerType &&
         other.deliveryAvailable == deliveryAvailable &&
         mapEquals(other.attributes, attributes) &&
+        listEquals(other.features, features) &&
+        other.contactPhone == contactPhone &&
         other.status == status &&
         other.views == views &&
         other.saves == saves &&

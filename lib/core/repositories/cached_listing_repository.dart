@@ -72,6 +72,10 @@ class CachedListingRepository implements ListingRepository {
       inner.fetchSubcategoryCounts();
 
   @override
+  Future<List<Listing>> fetchSimilar(Listing listing, {int limit = 6}) =>
+      inner.fetchSimilar(listing, limit: limit);
+
+  @override
   Future<Listing?> fetchById(String id) => inner.fetchById(id);
 
   @override

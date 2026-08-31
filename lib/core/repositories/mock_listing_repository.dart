@@ -83,6 +83,35 @@ class MockListingRepository implements ListingRepository {
   }
 
   @override
+  Future<List<Listing>> fetchSimilar(Listing listing, {int limit = 6}) async {
+    await _wait();
+    final pool = _listings
+        .where((l) => l.id != listing.id && l.status.isPublic)
+        .where((l) => l.subcategory == listing.subcategory)
+        .toList()
+      ..sort((a, b) {
+        // Same city first, then newest. A comparable item across the
+        // country is far less useful than one the buyer can go and see.
+        final aLocal = a.city == listing.city;
+        final bLocal = b.city == listing.city;
+        if (aLocal != bLocal) return aLocal ? -1 : 1;
+        return b.createdAt.compareTo(a.createdAt);
+      });
+
+    // Widen to the whole category when the subcategory is thin, which it
+    // usually is in a young marketplace.
+    if (pool.length < limit) {
+      final wider = _listings
+          .where((l) => l.id != listing.id && l.status.isPublic)
+          .where((l) => l.category == listing.category)
+          .where((l) => !pool.contains(l));
+      pool.addAll(wider);
+    }
+
+    return pool.take(limit).toList();
+  }
+
+  @override
   Future<Listing?> fetchById(String id) async {
     await _wait();
     for (final listing in _listings) {
@@ -284,13 +313,29 @@ class MockListingRepository implements ListingRepository {
         sellerVerified: true,
         negotiable: true,
         attributes: const <String, String>{
-          'Brand': 'Toyota',
+          'Body Type': 'SUV',
+          'Make': 'Toyota',
           'Model': 'Land Cruiser V8',
           'Year': '2016',
+          'Mileage (km)': '96000',
           'Transmission': 'Automatic',
-          'Fuel': 'Petrol',
-          'Mileage': '96,000 km',
+          'Fuel Type': 'Petrol',
         },
+        features: const <String>[
+          'Air conditioning',
+          'Airbags',
+          'Electric mirrors',
+          'Anti-lock brakes',
+          'Cruise control',
+          'Alloy wheels',
+          'Parking sensors',
+          'Leather seats',
+        ],
+        contactPhone: '+211924312026',
+        sellerType: SellerType.business,
+        deliveryAvailable: true,
+        latitude: 4.8594,
+        longitude: 31.5713,
         views: 1840,
         saves: 212,
         inquiries: 47,
@@ -321,9 +366,19 @@ class MockListingRepository implements ListingRepository {
         attributes: const <String, String>{
           'Brand': 'Apple',
           'Model': 'iPhone 13 Pro',
-          'Storage': '256GB',
-          'Colour': 'Graphite',
+          'Storage Capacity': '256GB',
+          'Color': 'Graphite',
         },
+        features: const <String>[
+          'Face ID',
+          'Wireless charging',
+          'Original box',
+          'Screen protector fitted',
+        ],
+        contactPhone: '+211925887410',
+        sellerType: SellerType.business,
+        latitude: 4.8517,
+        longitude: 31.5825,
         views: 2310,
         saves: 340,
         inquiries: 88,
@@ -414,9 +469,19 @@ class MockListingRepository implements ListingRepository {
         attributes: const <String, String>{
           'Bedrooms': '3',
           'Bathrooms': '2',
-          'Furnished': 'Semi',
-          'Parking': '2 cars',
+          'Furnishing': 'Semi-furnished',
+          'Amenities': 'Parking, Generator, Water Tank/Borehole, Security',
         },
+        features: const <String>[
+          'Walled compound',
+          'Borehole',
+          'Standby generator',
+          'Tiled floors',
+        ],
+        contactPhone: '+211921004455',
+        sellerType: SellerType.business,
+        latitude: 4.8702,
+        longitude: 31.5901,
         views: 1490,
         saves: 178,
         inquiries: 40,
