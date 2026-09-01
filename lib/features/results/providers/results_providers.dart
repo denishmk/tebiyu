@@ -43,7 +43,12 @@ enum DatePosted {
 @immutable
 class ResultsScope {
   /// Creates a scope.
-  const ResultsScope({this.category, this.subcategory, this.searchTerm});
+  const ResultsScope({
+    this.category,
+    this.subcategory,
+    this.searchTerm,
+    this.sellerId,
+  });
 
   /// Top level category, if the screen was opened from one.
   final String? category;
@@ -54,18 +59,30 @@ class ResultsScope {
   /// Free text, if the screen was opened from search.
   final String? searchTerm;
 
+  /// One seller's listings, used by the Seller Profile screen.
+  ///
+  /// Scoping by seller here rather than writing a second paginated grid
+  /// means the profile inherits sorting, load more and the empty states
+  /// already built, and any fix to those reaches both screens.
+  final String? sellerId;
+
   /// Heading for the screen.
   String get title => subcategory ?? category ?? searchTerm ?? 'All listings';
+
+  /// Whether this scope is one seller's listings.
+  bool get isSeller => sellerId != null;
 
   @override
   bool operator ==(Object other) =>
       other is ResultsScope &&
       other.category == category &&
       other.subcategory == subcategory &&
-      other.searchTerm == searchTerm;
+      other.searchTerm == searchTerm &&
+      other.sellerId == sellerId;
 
   @override
-  int get hashCode => Object.hash(category, subcategory, searchTerm);
+  int get hashCode =>
+      Object.hash(category, subcategory, searchTerm, sellerId);
 }
 
 /// User-chosen filters on a results screen.
@@ -401,6 +418,7 @@ class ResultsNotifier
             category: arg.category,
             subcategory: arg.subcategory,
             searchTerm: arg.searchTerm,
+            sellerId: arg.sellerId,
             type: filters.type,
             conditions: filters.conditions,
             minPrice: filters.minPrice,

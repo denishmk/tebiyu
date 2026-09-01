@@ -683,7 +683,7 @@ class _SellerCard extends StatelessWidget {
               ),
             ),
             trailing: Icon(Icons.chevron_right, color: colors.secondaryIcon),
-            onTap: () {},
+            onTap: () => context.push(Routes.sellerPath(listing.sellerId)),
           ),
           if (listing.sellerVerified)
             Padding(

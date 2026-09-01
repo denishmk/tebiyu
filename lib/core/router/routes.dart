@@ -116,5 +116,6 @@ abstract final class Routes {
       'search': ?search,
     };
     return Uri(path: results, queryParameters: params).toString();
-  }    
+  }
+    
 }
