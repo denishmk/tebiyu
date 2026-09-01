@@ -15,6 +15,7 @@ import 'package:tebiyu/features/location/screens/location_picker_screen.dart';
 import 'package:tebiyu/features/onboarding/screens/onboarding_screen.dart';
 import 'package:tebiyu/features/results/providers/results_providers.dart';
 import 'package:tebiyu/features/results/screens/results_screen.dart';
+import 'package:tebiyu/features/search/screens/search_screen.dart';
 import 'package:tebiyu/features/seller_profile/screens/'
     'seller_profile_screen.dart';
 import 'package:tebiyu/features/shell/screens/app_shell.dart';
@@ -78,6 +79,10 @@ final Provider<GoRouter> goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ListingDetailScreen(
           listingId: state.pathParameters['id']!,
         ),
+      ),
+       GoRoute(
+        path: Routes.search,
+        builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: Routes.seller,

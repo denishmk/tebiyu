@@ -13,6 +13,14 @@ abstract final class PreferencesService {
   static const String _languageCode = 'language_code';
   static const String _locationCity = 'location_city';
   static const String _locationArea = 'location_area';
+  static const String _recentSearches = 'recent_searches';
+
+  /// How many recent searches are kept.
+  ///
+  /// Eight fills a phone screen without scrolling. A longer history is not
+  /// more useful: anything older than the last handful is faster to retype
+  /// than to find.
+  static const int recentSearchLimit = 8;
 
   /// Whether the user has finished onboarding.
   static Future<bool> hasCompletedOnboarding() async {
@@ -64,5 +72,48 @@ abstract final class PreferencesService {
     } else {
       await prefs.setString(_locationArea, location.area!);
     }
+  }
+
+  /// Recent search terms, most recent first.
+  static Future<List<String>> recentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_recentSearches) ?? const <String>[];
+  }
+
+  /// Records [term] as the most recent search.
+  ///
+  /// Case-insensitively de-duplicated: someone who searches "Toyota" then
+  /// "toyota" has searched for one thing, and showing both back to them
+  /// wastes half the list.
+  static Future<List<String>> addRecentSearch(String term) async {
+    final trimmed = term.trim();
+    if (trimmed.isEmpty) return recentSearches();
+
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList(_recentSearches) ?? <String>[];
+    final lower = trimmed.toLowerCase();
+
+    final next = <String>[
+      trimmed,
+      ...existing.where((value) => value.toLowerCase() != lower),
+    ].take(recentSearchLimit).toList();
+
+    await prefs.setStringList(_recentSearches, next);
+    return next;
+  }
+
+  /// Removes one term from the history.
+  static Future<List<String>> removeRecentSearch(String term) async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList(_recentSearches) ?? <String>[];
+    final next = existing.where((value) => value != term).toList();
+    await prefs.setStringList(_recentSearches, next);
+    return next;
+  }
+
+  /// Empties the search history.
+  static Future<void> clearRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_recentSearches);
   }
 }

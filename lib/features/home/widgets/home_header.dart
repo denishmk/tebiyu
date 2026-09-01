@@ -140,7 +140,7 @@ class _SearchField extends StatelessWidget {
       borderRadius: AppRadius.allXl,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () {},
+        onTap: () => context.push(Routes.search),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
