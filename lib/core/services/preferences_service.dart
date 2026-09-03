@@ -14,6 +14,7 @@ abstract final class PreferencesService {
   static const String _locationCity = 'location_city';
   static const String _locationArea = 'location_area';
   static const String _recentSearches = 'recent_searches';
+  static const String _savedListings = 'saved_listings';
 
   /// How many recent searches are kept.
   ///
@@ -72,6 +73,23 @@ abstract final class PreferencesService {
     } else {
       await prefs.setString(_locationArea, location.area!);
     }
+  }
+
+  /// Ids of listings the user has saved, most recently saved first.
+  ///
+  /// Device local, not account bound. Saves should follow the account once
+  /// there is a Firestore collection for them, otherwise signing in on a
+  /// new phone loses everything. Two people sharing a device would also
+  /// see each other's saves, which is worth fixing at the same time.
+  static Future<List<String>> savedListings() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_savedListings) ?? const <String>[];
+  }
+
+  /// Stores the saved listing ids.
+  static Future<void> setSavedListings(List<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_savedListings, ids);
   }
 
   /// Recent search terms, most recent first.

@@ -112,6 +112,17 @@ class MockListingRepository implements ListingRepository {
   }
 
   @override
+  Future<List<Listing>> fetchByIds(List<String> ids) async {
+    await _wait();
+    final byId = <String, Listing>{for (final l in _listings) l.id: l};
+    // Preserves the order of [ids] rather than the order of the store, so
+    // the Saved screen can show most recently saved first.
+        return <Listing>[
+      for (final id in ids) ?byId[id],
+    ];
+  }
+
+  @override
   Future<Listing?> fetchById(String id) async {
     await _wait();
     for (final listing in _listings) {

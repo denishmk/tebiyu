@@ -1,36 +1,61 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tebiyu/core/services/preferences_service.dart';
 
-/// Tracks which listings the user has saved.
+/// Ids of listings the user has saved, most recently saved first.
 ///
-/// Guest users save into memory only; the merge into their account on
-/// signup is a backlog item and will replace this build method with a read
-/// from Hive plus a Firestore sync.
-class SavedListingsNotifier extends Notifier<Set<String>> {
-  @override
-  Set<String> build() => <String>{};
+/// Order is meaningful: the Saved screen shows newest first, and a set
+/// would lose that. Membership checks go through
+/// [isListingSavedProvider], which is what the cards watch.
+final AsyncNotifierProvider<SavedListingsNotifier, List<String>>
+    savedListingsProvider =
+    AsyncNotifierProvider<SavedListingsNotifier, List<String>>(
+  SavedListingsNotifier.new,
+);
 
-  /// Adds [id] if absent, removes it if present.
-  void toggle(String id) {
-    final next = Set<String>.of(state);
-    if (!next.remove(id)) next.add(id);
-    state = next;
+/// Holds and persists saved listing ids.
+class SavedListingsNotifier extends AsyncNotifier<List<String>> {
+  @override
+  Future<List<String>> build() => PreferencesService.savedListings();
+
+  /// Adds or removes [id].
+  ///
+  /// Optimistic: the heart fills before the write completes. A save is
+  /// trivial to undo and nobody should watch a card wait on a disk write.
+  Future<void> toggle(String id) async {
+    final current = state.valueOrNull ?? const <String>[];
+    final next = current.contains(id)
+        ? current.where((value) => value != id).toList()
+        : <String>[id, ...current];
+
+    state = AsyncData(next);
+
+    try {
+      await PreferencesService.setSavedListings(next);
+    } on Object {
+      // Put it back. A heart that stays filled after a failed write tells
+      // the user something is saved when it is not.
+      state = AsyncData(current);
+    }
   }
 
-  /// Whether [id] is currently saved.
-  bool contains(String id) => state.contains(id);
+  /// Removes every saved listing.
+  Future<void> clear() async {
+    final current = state.valueOrNull ?? const <String>[];
+    state = const AsyncData(<String>[]);
+    try {
+      await PreferencesService.setSavedListings(const <String>[]);
+    } on Object {
+      state = AsyncData(current);
+    }
+  }
 }
 
-/// Ids of every listing the user has saved.
-final savedListingsProvider =
-    NotifierProvider<SavedListingsNotifier, Set<String>>(
-      SavedListingsNotifier.new,
-    );
-
-/// Whether one specific listing is saved.
+/// Whether one listing is saved.
 ///
-/// Watching this instead of [savedListingsProvider] keeps a heart tap from
-/// rebuilding every other card in the feed.
+/// Watched per card, so toggling a heart rebuilds that card rather than
+/// every card in the grid.
 final ProviderFamily<bool, String> isListingSavedProvider =
     Provider.family<bool, String>((ref, id) {
-      return ref.watch(savedListingsProvider).contains(id);
-    });
+  final saved = ref.watch(savedListingsProvider).valueOrNull;
+  return saved?.contains(id) ?? false;
+});

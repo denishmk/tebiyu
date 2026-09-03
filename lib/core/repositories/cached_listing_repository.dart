@@ -76,6 +76,9 @@ class CachedListingRepository implements ListingRepository {
       inner.fetchSimilar(listing, limit: limit);
 
   @override
+  Future<List<Listing>> fetchByIds(List<String> ids) => inner.fetchByIds(ids);
+
+  @override
   Future<Listing?> fetchById(String id) => inner.fetchById(id);
 
   @override

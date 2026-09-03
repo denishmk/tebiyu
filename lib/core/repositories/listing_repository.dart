@@ -485,6 +485,13 @@ abstract class ListingRepository {
   /// buyer comparing prices actually wants.
   Future<List<Listing>> fetchSimilar(Listing listing, {int limit = 6});
 
+  /// Fetches several listings by id, skipping any that no longer exist.
+  ///
+  /// Saved listings are held as ids, and some will have been sold or taken
+  /// down since. Returning only what still exists is what lets the Saved
+  /// screen quietly drop the rest rather than showing broken cards.
+  Future<List<Listing>> fetchByIds(List<String> ids);
+
   /// Fetches a single listing, or null when it no longer exists.
   Future<Listing?> fetchById(String id);
 

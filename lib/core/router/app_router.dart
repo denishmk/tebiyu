@@ -15,6 +15,7 @@ import 'package:tebiyu/features/location/screens/location_picker_screen.dart';
 import 'package:tebiyu/features/onboarding/screens/onboarding_screen.dart';
 import 'package:tebiyu/features/results/providers/results_providers.dart';
 import 'package:tebiyu/features/results/screens/results_screen.dart';
+import 'package:tebiyu/features/saved/screens/saved_screen.dart';
 import 'package:tebiyu/features/search/screens/search_screen.dart';
 import 'package:tebiyu/features/seller_profile/screens/'
     'seller_profile_screen.dart';
@@ -115,14 +116,7 @@ final Provider<GoRouter> goRouterProvider = Provider<GoRouter>((ref) {
         branches: [
           _branch(Routes.home, const HomeScreen()),
           _branch(Routes.categories, const CategoryScreen()),
-          _branch(
-            Routes.saved,
-            const PlaceholderScreen(
-              title: 'Saved',
-              icon: Icons.favorite_border,
-              phase: 'P2.7',
-            ),
-          ),
+          _branch(Routes.saved, const SavedScreen()),
           _branch(
             Routes.messages,
             const PlaceholderScreen(
