@@ -54,4 +54,6 @@ app.*.map.json
    *.env
 
    # macOS
-   .DS_Store
+   .DS_Storeseed/service-account.json.json 
+*.json.json 
+seed/service-account.json 

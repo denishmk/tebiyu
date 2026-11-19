@@ -1,0 +1,18 @@
+{
+  "name": "tebiyu-seed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Seeds Firestore with development data for Tebiyu.",
+  "main": "seed.js",
+  "scripts": {
+    "seed": "node seed.js",
+    "reseed": "node seed.js --wipe"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.3.0"
+  },
+  "allowScripts": {
+    "@firebase/util@1.15.3": true,
+    "protobufjs@7.6.6": true
+  }
+}

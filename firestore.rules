@@ -1,0 +1,209 @@
+rules_version = '2';
+
+// Tebiyu Firestore rules.
+//
+// Reading is open. Browsing without an account is the product's deferred
+// auth model, so listings and profiles are genuinely public. That does mean
+// the catalogue can be scraped, which is true of every classifieds site and
+// is the accepted cost of letting buyers look before they sign up.
+//
+// Writing is narrow. A seller may only touch their own documents, and the
+// fields that carry trust — verification, ratings, follower counts, view
+// counts — are unwritable from a client at all. The whole trust model rests
+// on a phone being unable to set `verified: true` on its own account.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Fields the client sent that differ from what is stored.
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------------------------------------------------------------
+    // Listings
+    // ---------------------------------------------------------------
+
+    match /listings/{listingId} {
+
+      // Counters a seller must not be able to inflate. Views, saves and
+      // inquiries are social proof, and social proof a seller can type in
+      // is worthless. Cloud Functions and the Admin SDK bypass these rules
+      // entirely, which is how these fields get maintained.
+      function protectedListingFields() {
+        return [
+          'views', 'saves', 'inquiries',
+          'promoted', 'promoted_until',
+          'seller_verified', 'created_at'
+        ];
+      }
+
+      function validListing() {
+        let d = request.resource.data;
+        return d.title is string
+          && d.title.size() > 2
+          && d.title.size() <= 120
+          && d.description is string
+          && d.description.size() <= 5000
+          && d.price is number
+          && d.price >= 0
+          && d.currency in ['ssp', 'usd']
+          && d.type in ['sale', 'hire', 'lease']
+          && d.condition is string
+          && d.category is string
+          && d.city is string
+          && d.images is list
+          && d.images.size() <= 10
+          && d.status in ['active', 'sold', 'draft', 'paused', 'expired'];
+      }
+
+      allow read: if true;
+
+      // On create the seller id must be the caller. Without this check a
+      // signed in user could post listings attributed to someone else,
+      // which is a straightforward impersonation route.
+      allow create: if isOwner(request.resource.data.seller_id)
+        && validListing()
+        && request.resource.data.views == 0
+        && request.resource.data.saves == 0
+        && request.resource.data.inquiries == 0
+        && request.resource.data.promoted == false;
+
+      allow update: if isOwner(resource.data.seller_id)
+        && request.resource.data.seller_id == resource.data.seller_id
+        && validListing()
+        && !changed().hasAny(protectedListingFields());
+
+      allow delete: if isOwner(resource.data.seller_id);
+    }
+
+    // ---------------------------------------------------------------
+    // Users
+    // ---------------------------------------------------------------
+
+    match /users/{userId} {
+
+      // Everything here is either awarded by review or aggregated from
+      // other people's actions. A seller setting their own trust score
+      // would make the badge meaningless.
+      function protectedUserFields() {
+        return [
+          'verified', 'trust_score', 'seller_rating', 'review_count',
+          'followers', 'following', 'active_listings', 'role',
+          'member_since'
+        ];
+      }
+
+      function validUser() {
+        let d = request.resource.data;
+        return d.name is string
+          && d.name.size() > 0
+          && d.name.size() <= 80
+          && (!('bio' in d) || d.bio.size() <= 300)
+          && (!('seller_type' in d) || d.seller_type in ['individual', 'business']);
+      }
+
+      allow read: if true;
+
+      allow create: if isOwner(userId)
+        && validUser()
+        && request.resource.data.verified == false
+        && request.resource.data.role == 'user'
+        && request.resource.data.trust_score == 0
+        && request.resource.data.followers == 0;
+
+      allow update: if isOwner(userId)
+        && validUser()
+        && !changed().hasAny(protectedUserFields());
+
+      // No client deletes. Removing an account has to unpick listings,
+      // follows and conversations, which is a Cloud Function's job.
+      allow delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Follows
+    // ---------------------------------------------------------------
+    //
+    // A subcollection rather than an array on the user document: an array
+    // would hit the one megabyte document limit and rewrite the whole
+    // document on every follow. The counters on the user document are
+    // maintained by a Cloud Function watching this collection.
+
+    match /users/{userId}/followers/{followerId} {
+      allow read: if true;
+      allow create, delete: if isOwner(followerId);
+      allow update: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Saved listings
+    // ---------------------------------------------------------------
+    //
+    // Private to the owner. What someone is considering buying is not
+    // public information, unlike what they are selling.
+
+    match /users/{userId}/saved/{listingId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ---------------------------------------------------------------
+    // Server maintained documents
+    // ---------------------------------------------------------------
+
+    // Subcategory counts, exchange rate, promo banners. Read by everyone,
+    // written only by Cloud Functions and the admin console, both of which
+    // use the Admin SDK and bypass these rules.
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /counters/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Reports and verification
+    // ---------------------------------------------------------------
+    //
+    // Write only from the client. A reporter may file one but must not be
+    // able to read the moderation queue, and a seller must not be able to
+    // see who reported them.
+
+    match /reports/{reportId} {
+      allow read: if false;
+      allow create: if signedIn()
+        && request.resource.data.reporter_id == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /verification_requests/{requestId} {
+      allow read: if isOwner(resource.data.user_id);
+      allow create: if isOwner(request.resource.data.user_id)
+        && request.resource.data.status == 'pending';
+      allow update, delete: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Anything not named above stays closed.
+    // ---------------------------------------------------------------
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

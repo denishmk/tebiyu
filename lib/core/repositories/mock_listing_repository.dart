@@ -117,7 +117,7 @@ class MockListingRepository implements ListingRepository {
     final byId = <String, Listing>{for (final l in _listings) l.id: l};
     // Preserves the order of [ids] rather than the order of the store, so
     // the Saved screen can show most recently saved first.
-        return <Listing>[
+    return <Listing>[
       for (final id in ids) ?byId[id],
     ];
   }
@@ -402,7 +402,7 @@ class MockListingRepository implements ListingRepository {
             'Fenced plot with clear title deed, close to the main road. '
             'Water and power available on the street.',
         category: 'Properties',
-        subcategory: 'Land/Plots',
+        subcategory: 'Land & Plots',
         price: 9500000,
         currency: ListingCurrency.ssp,
         priceUsdAtPost: 7300,
@@ -432,7 +432,7 @@ class MockListingRepository implements ListingRepository {
             'Used for one year, cooling is perfect. Selling because I am '
             'relocating.',
         category: 'Electronics & Appliances',
-        subcategory: 'Refrigerators & Freezers',
+        subcategory: 'Kitchen Appliances',
         price: 480000,
         currency: ListingCurrency.ssp,
         priceUsdAtPost: 370,
@@ -462,7 +462,7 @@ class MockListingRepository implements ListingRepository {
             'Self contained compound, parking for two cars, borehole and '
             'standby generator. Annual payment preferred.',
         category: 'Properties',
-        subcategory: 'Houses/Apartments',
+        subcategory: 'Houses',
         price: 12000,
         currency: ListingCurrency.usd,
         condition: ListingCondition.used,
@@ -534,7 +534,7 @@ class MockListingRepository implements ListingRepository {
         description:
             'Runs quietly, low fuel consumption. Serviced two weeks ago, '
             'ready to work.',
-        category: 'Commercial Equipment & Tools',
+        category: 'Commercial Equipment',
         subcategory: 'Industrial Equipment',
         price: 1350,
         currency: ListingCurrency.usd,
@@ -622,8 +622,8 @@ class MockListingRepository implements ListingRepository {
         description:
             'Complete kit with panel, 100Ah battery and 1000W inverter. '
             'Installation can be arranged.',
-        category: 'Electronics & Appliances',
-        subcategory: 'Security & Surveillance',
+        category: 'Commercial Equipment',
+        subcategory: 'Electrical & Mechanical',
         price: 890,
         currency: ListingCurrency.usd,
         condition: ListingCondition.brandNew,
@@ -681,7 +681,7 @@ class MockListingRepository implements ListingRepository {
             'Weddings, graduations and corporate events. Full day package '
             'includes edited photos and a highlight video.',
         category: 'Services',
-        subcategory: 'Creative & Media',
+        subcategory: 'Photography & Videography',
         price: 350,
         currency: ListingCurrency.usd,
         condition: ListingCondition.brandNew,
